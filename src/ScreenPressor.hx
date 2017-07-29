@@ -152,7 +152,7 @@ class ScreenPressor implements IVideoCodec
 	
 	public function StopAndClean():Void
 	{
-		bts = null; rc = null;
+		bts = null; rc = null; prevFrame = null; cntab = null;
 	}
 	
 	public function Preinit(insignificant_lines : Int):Void //must be called after memory is allocated
@@ -437,7 +437,7 @@ class ScreenPressor implements IVideoCodec
 	
 	public function DecompressP(src:Uint8Array, dst:Int32Array):PFrameResult 
 	{
-		//Logging.MLog("SP decompressP sz=" + src.length + " bpp=" + bpp);
+		//trace("SP decompressP sz=" + src.length + " bpp=" + bpp);
 		if (src.length == 0 || !decodedI)
 			return { data_pnt: prevFrame, significant_changes : false};
 		//src.position = 0;

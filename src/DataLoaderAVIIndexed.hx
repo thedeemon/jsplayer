@@ -1,4 +1,5 @@
 package ;
+import js.Lib;
 import openfl.events.Event;
 import openfl.events.ProgressEvent;
 import openfl.events.SecurityErrorEvent;
@@ -145,9 +146,9 @@ class DataLoaderAVIIndexed extends DataLoader
 
 	function on_first_frame(arr : ByteArray):Void
 	{
-		DataLoader.JSLog("got first frame");
-		add_frame(arr);
-		avi_parser.SetFrameHandler(add_frame);		
+		DataLoader.JSLog("DLAI.on_first_frame got first frame len=" + arr.length);
+		avi_parser.SetFrameHandler(add_frame);
+		add_frame(arr);		
 		
 		if (indexes == null) { //there was no indx in header
 			var msz = avi_parser.GetVar("movi_size");
@@ -171,6 +172,8 @@ class DataLoaderAVIIndexed extends DataLoader
 	
 	function add_frame(arr : ByteArray):Void
 	{	
+		Logging.MLog("DLAI.add_frame len=" + arr.length);
+		//js.Lib.debug();
 		//if (avi_parsing_pos < 5)
 		//	trace("add_frame avi_prs_pos=" + avi_parsing_pos + " req_fr=" + requested_frame_num + " arr.len=" + arr.length);
 		if (arr.length != 0) { 
@@ -257,8 +260,8 @@ class DataLoaderAVIIndexed extends DataLoader
 	
 	function on_error(e:Event):Void
 	{
-		DataLoader.JSLog("stream IO error: " + e);
-		trace("stream IO error: " + e);
+		Logging.MLog("stream IO error: " + e);
+		//trace("stream IO error: " + e);
 	}
 	
 	function on_security_error(event : SecurityErrorEvent):Void {
@@ -267,8 +270,8 @@ class DataLoaderAVIIndexed extends DataLoader
 	
 	function on_error_idx(e:Event):Void
 	{
-		DataLoader.JSLog("idx_stream stream IO error: " + e);
-		trace("idx_stream IO error: " + e);
+		Logging.MLog("idx_stream stream IO error: " + e);
+		//trace("idx_stream IO error: " + e);
 	}	
 	
 	function save_idx_chunk():Void
@@ -281,13 +284,16 @@ class DataLoaderAVIIndexed extends DataLoader
 			chunk.endian = Endian.LITTLE_ENDIAN;
 			idx_stream.readBytes(chunk, 0, n);
 			idx_buffer.AddChunk(chunk);		
+			Logging.MLog("saved idx chunk, total size: " + idx_buffer.BytesAvailable(0));
 		}		
 	}
 	
 	function on_idx1_data(e:Event):Void
 	{
+		Logging.MLog("on_idx1_data");
 		save_idx_chunk();
 		if (parse_idx1()) {
+			Logging.MLog("parse_idx1 ok");
 			idx_stream.addEventListener(ProgressEvent.PROGRESS, function(e:Event):Void { } );
 			if (idx_stream.connected)
 				idx_stream.close();
@@ -667,7 +673,7 @@ class DataLoaderAVIIndexed extends DataLoader
 
 	function dont_load_too_much(force_stop:Bool):Void
 	{
-		js.Lib.debug();
+		//js.Lib.debug();
 		Logging.MLog("dltm: sum=" + sum_size_loaded + " limit=" + storage_limit /*+ " kfs=" + sum_key_frames_loaded*/);
 		if (!force_stop) {
 			if (sum_size_loaded < storage_limit) return; //ok

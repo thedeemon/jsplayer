@@ -159,7 +159,7 @@ class DataLoader
 	function on_progress(e:ProgressEvent):Void
 	{
 		var n = stream.bytesAvailable;
-		js.Lib.debug();
+		//js.Lib.debug();
 		#if logging
 		var details = "";
 		var show = false;
