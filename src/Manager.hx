@@ -471,7 +471,7 @@ class Manager
 					var decoder_state = decoder.DecompressI(frm.data, new_frame);					
 					handle_decode_status(decoder_state);					
 				} else {
-					Logging.MLog("worker: decompressing P frame " + next_frame_to_decode + " len=" + frm.data.length);
+					//Logging.MLog("worker: decompressing P frame " + next_frame_to_decode + " len=" + frm.data.length);
 					var res = decoder.DecompressP(frm.data, new_frame);
 					new_frame = res.data_pnt;			
 					frm.significant_changes = res.significant_changes;

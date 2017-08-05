@@ -895,6 +895,7 @@ class Main
 		
 		bitmap_data = new BitmapData(v.X, v.Y, false);
 		bitmap = new Bitmap(bitmap_data);
+		Logging.MLog("on_open st_width=" + st_width + " st_height=" + st_height + " v.X=" + v.X + " v.Y=" + v.Y);
 		var mat = new Matrix(st_width / v.X, 0, 0, -st_height/v.Y, 0, st_height);
 		bitmap.transform.matrix = mat;
 		bitmap.smoothing = true;
@@ -990,6 +991,7 @@ class Main
 		timer_play = new Timer(50, 0);
 		timer_play.addEventListener(TimerEvent.TIMER, play_timer);
 		timer_play.start();		
+		on_stage_resize(null);
 		
 		#if logging
 		/*var timer_elog = new Timer(1000);
