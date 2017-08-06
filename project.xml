@@ -8,7 +8,7 @@
 	<!-- output -->
 	<app main="Main" file="jsplayer" path="bin" />
 	
-	<window background="#FFFFFF" fps="100" />
+	<window background="#FFFFFF" fps="100" resizable="true" />
 	<window width="0" height="0" unless="mobile" />
 	
 	<!-- classpath, haxe libs -->

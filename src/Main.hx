@@ -237,11 +237,9 @@ class Main
 				trace("Lib.current.loaderInfo.parameters=" + Lib.current.loaderInfo.parameters);
 				trace("Lib.current.stage.stageWidth=" + Lib.current.stage.stageWidth);
 				var url = Lib.current.stage.loaderInfo.url;
-				//trace("url: " + url);
 				
 				var flashVars : Dynamic<String> = Lib.current.loaderInfo.parameters;
-				//Lib.current.stage.loaderInfo.parameters;
-				var fname = flashVars.fname;//"849.avi";//"printer2-555.avi";//flashVars.fname;
+				var fname = flashVars.fname;
 				instance_id = flashVars.id != null ? flashVars.id : "player";
 				
 				if (fname != null) {					
@@ -1269,7 +1267,12 @@ class Main
 	
 	function js_resize(x:Int, y:Int):Void 
 	{
-		Logging.MLog("js_resize x=" + x + " y=" + y);
+		Logging.MLog("js_resize x=" + x + " y=" + y + " mode=" + Lib.current.stage.scaleMode);
+		untyped var player = document.getElementById(instance_id);
+		untyped var s = player.childNodes[0]; //the stage div
+		untyped s.style.width  = x+"px";
+		untyped s.style.height = y+"px";
 		Lib.current.stage.window.resize(x, y);
+		Lib.current.stage.onWindowResize(Lib.current.stage.window, x, y);
 	}
 }
