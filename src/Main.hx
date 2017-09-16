@@ -1,5 +1,6 @@
 ﻿package ;
 
+import js.Browser;
 import openfl.display.Bitmap;
 import openfl.display.BitmapData;
 import openfl.display.Graphics;
@@ -34,6 +35,7 @@ import openfl.media.Sound;
 import openfl.external.ExternalInterface;
 import VideoData;
 import js.Lib as JsLib;
+import js.html.Screen;
 
 enum ScrollingState { scrollNone; scrollHor; scrollVer; }
 
@@ -126,6 +128,8 @@ class Main
 	static var g_main : Main;
 	static var another_video : String;
 	var instance_id : String;
+	var savedWidth : Int; // stage size before going full screen
+	var savedHeight : Int;
 	
 	static function main() 
 	{
@@ -223,9 +227,9 @@ class Main
 		/*if (ExternalInterface.available) {
 			var fs = ExternalInterface.call( "function() { var s = document.getElementsByTagName('body')[0].innerHTML; if(s.toLowerCase().indexOf('allowfullscreen=\"true\"') != -1){ return true;}else{ return false;} }" );			
 			return cast(fs, Bool);
-		}
-		return true;*/
-		return false;
+		}*/
+		return true;
+		//return false;
 	}
 
 	function on_load_timer(e:TimerEvent):Void
@@ -806,39 +810,104 @@ class Main
 
 	function on_prevframe(e:MouseEvent):Void
 	{		
-		#if logging
+		/*#if logging
 		var nextra = !Logging.extra;
 		Logging.extra = true;
 		var state = nextra ? "on" : "off";
 		DataLoader.JSLog("extra logging " + state);
 		Logging.extra = nextra;
 		text_pos.text = state;
-		#else
+		#else*/
 		seek_start(man.PrevFrameTime());
-		#end
+		//#end
 	}
 
 	function on_prevkey(e:MouseEvent):Void
 	{		
 		seek_start(man.PrevKeyTime());
 	}
+	
+	function isFullScreen() : Bool
+	{
+		var doc = Browser.document;
+		if (untyped __js__('"webkitFullscreenEnabled" in doc'))
+		untyped 	return doc.webkitIsFullScreen;
+		if (untyped __js__('"fullscreenEnabled" in doc')) {
+			untyped var fe = doc.fullscreenElement;
+			return fe != null;
+		} else		
+		if (untyped __js__('"msFullscreenElement" in doc')) {
+			untyped var fe = doc.msFullscreenElement;
+			return fe != null;
+		} else
+		if (untyped __js__('"mozFullScreenElement" in doc')) {
+			untyped var fe = doc.mozFullScreenElement;
+			return fe != null;
+		}
+		return false; 
+	}
+	
+	function fullScreenChanged() {
+		Logging.MLog("fullScreenChanged");
+		if (!isFullScreen()) {
+			if (savedWidth > 0) 
+				resizePlayer(savedWidth, savedHeight);
+		} 
+	}
+	
+	function fullScreenOn():Void
+	{
+		var doc = Browser.document;
+		var element = doc.getElementById(instance_id);
+		if (untyped __js__('"requestFullscreen" in element')) {
+			doc.addEventListener("fullscreenchange", fullScreenChanged);
+			untyped element.requestFullscreen();
+		} else
+		if (untyped __js__('"webkitRequestFullscreen" in element')) {
+			doc.addEventListener("webkitfullscreenchange", fullScreenChanged);
+			untyped element.webkitRequestFullscreen();
+		} else
+		if (untyped __js__('"mozRequestFullScreen" in element')) {
+			doc.addEventListener("mozfullscreenchange", fullScreenChanged);
+			untyped element.mozRequestFullScreen();
+		} else
+		if (untyped __js__('"msRequestFullscreen" in element')) {
+			doc.addEventListener("MSFullscreenChange", fullScreenChanged);
+			untyped element.msRequestFullscreen();
+		} 
+	}
+	
+	function fullScreenOff():Void
+	{
+		var doc = Browser.document;
+		if (untyped __js__('"exitFullscreen" in doc')) {
+			untyped doc.exitFullscreen();
+		} else		
+		if (untyped __js__('"webkitExitFullscreen" in doc')) {
+			untyped doc.webkitExitFullscreen();
+		} else		
+		if (untyped __js__('"mozCancelFullScreen" in doc')) {
+			untyped doc.mozCancelFullScreen();
+		} else		
+		if (untyped __js__('"msExitFullscreen" in doc')) {
+			untyped doc.msExitFullscreen();
+		} 
+	}
 
 	function on_fullscreen(e:MouseEvent):Void
 	{		
-		if (Lib.current.stage != null) {
-			if (Lib.current.stage.displayState == StageDisplayState.FULL_SCREEN) {				
-				Lib.current.stage.displayState = StageDisplayState.NORMAL;
-				//Lib.current.stage.scaleMode = StageScaleMode.NO_SCALE;
-				Lib.current.stage.window.fullscreen = false;
-			} else {
-				var st_width  = Lib.current.stage.stageWidth;
-				var st_height = Lib.current.stage.stageHeight;				
-				//Lib.current.stage.fullScreenSourceRect = new Rectangle(0, 0, st_width, st_height);
-				Lib.current.stage.displayState = StageDisplayState.FULL_SCREEN;// .FULL_SCREEN;
-				//Lib.current.stage.scaleMode = StageScaleMode.SHOW_ALL;
-				Lib.current.stage.window.fullscreen = true;
-			}
-		} else trace("Lib.current.stage is null");
+		Logging.MLog("on_fullscreen, id="+ instance_id);
+		if (isFullScreen()) {
+			fullScreenOff();
+			//if (savedWidth > 0) 
+			//	resizePlayer(savedWidth, savedHeight);
+		} else {
+			savedWidth = Lib.current.stage.stageWidth;
+			savedHeight = Lib.current.stage.stageHeight;					
+			fullScreenOn();
+			var s : Screen = untyped window.screen;
+			resizePlayer(s.width, s.height);
+		}
 	}
 	
 	function on_autoskip(e:MouseEvent):Void
@@ -1268,6 +1337,12 @@ class Main
 	function js_resize(x:Int, y:Int):Void 
 	{
 		Logging.MLog("js_resize x=" + x + " y=" + y + " mode=" + Lib.current.stage.scaleMode);
+		resizePlayer(x, y);
+	}
+	
+	function resizePlayer(x:Int, y:Int):Void 
+	{
+		Logging.MLog("resizing to " + x +"x" + y);
 		untyped var player = document.getElementById(instance_id);
 		untyped var s = player.childNodes[0]; //the stage div
 		untyped s.style.width  = x+"px";
