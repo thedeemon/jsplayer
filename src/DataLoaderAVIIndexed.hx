@@ -172,10 +172,7 @@ class DataLoaderAVIIndexed extends DataLoader
 	
 	function add_frame(arr : ByteArray):Void
 	{	
-		Logging.MLog("DLAI.add_frame len=" + arr.length);
-		//js.Lib.debug();
-		//if (avi_parsing_pos < 5)
-		//	trace("add_frame avi_prs_pos=" + avi_parsing_pos + " req_fr=" + requested_frame_num + " arr.len=" + arr.length);
+		//Logging.MLog("DLAI.add_frame len=" + arr.length);
 		if (arr.length != 0) { 
 			//skip all zero-length frames created when ix was read
 			while (frames[avi_parsing_pos] != null && frames[avi_parsing_pos].data != null && frames[avi_parsing_pos].data.length == 0) {
@@ -192,17 +189,6 @@ class DataLoaderAVIIndexed extends DataLoader
 		
 		if (frames[avi_parsing_pos] != null) {
 			frames[avi_parsing_pos].data = new Uint8Array( arr.toArrayBuffer() );
-			//test 
-			/*var ix = frames[avi_parsing_pos].ix;
-			if (decoder!=null && ix >= 0) {
-				var i = avi_parsing_pos - indexes[ix].first_frame;
-				var ikey = indexes[ix].frames[i].key;
-				var dkey = decoder.IsKeyFrame(arr);
-				if (ikey != dkey) {
-					//trace("ix mismatch num=" + avi_parsing_pos + " ikey=" + ikey + " dkey=" + dkey + " ixnum=" + ix + " i=" + i);
-					avi_parser.SetFrameHandler(null);
-				}
-			}*/
 		} else {
 			var u8a = new Uint8Array( arr.toArrayBuffer() );
 			var keyfr = (avi_parsing_pos == 0 ? true : (decoder != null ? decoder.IsKeyFrame(u8a) : false));
@@ -217,7 +203,7 @@ class DataLoaderAVIIndexed extends DataLoader
 		sum_size_loaded += arr.length;
 		if (frames[avi_parsing_pos].key) { 
 			cur_last_key_frame = avi_parsing_pos;
-			Logging.MLog("DLAI.add_frame: key frame added at avi_parsing_pos=" + avi_parsing_pos);
+			//Logging.MLog("DLAI.add_frame: key frame added at avi_parsing_pos=" + avi_parsing_pos);
 		}
 		
 		var force_stop = false;
@@ -673,33 +659,20 @@ class DataLoaderAVIIndexed extends DataLoader
 
 	function dont_load_too_much(force_stop:Bool):Void
 	{
-		//js.Lib.debug();
-		Logging.MLog("dltm: sum=" + sum_size_loaded + " limit=" + storage_limit /*+ " kfs=" + sum_key_frames_loaded*/);
+		//Logging.MLog("dltm: sum=" + sum_size_loaded + " limit=" + storage_limit /*+ " kfs=" + sum_key_frames_loaded*/);
 		if (!force_stop) {
 			if (sum_size_loaded < storage_limit) return; //ok
 			if (cur_last_key_frame <= foi_copy) return; // we need next key frame loaded before we stop data transfer
 		}
-		Logging.MLog(" too much data, closing connection. force_stop=" + force_stop + " cur_last_key_frame=" + cur_last_key_frame
-						+ " foi=" + foi_copy);
-		if (stream != null) {
-			if (stream.connected) {
-				Logging.MLog("stream.close()");
-				stream.close();						
-			} else {
-				Logging.MLog("stream.connected == false");
-			}
-		} else 
-			Logging.MLog(" stream == null");
-		
+		//Logging.MLog(" too much data, closing connection. force_stop=" + force_stop + " cur_last_key_frame=" + cur_last_key_frame
+		//				+ " foi=" + foi_copy);
+		if (stream != null && stream.connected) 
+			stream.close();			
 		stop_loading = true;
-		mp3_parser.OnDataEnd();
-		
-		//Logging.MLog("almost okay");
-		//trace("connected: " + stream.connected);
+		mp3_parser.OnDataEnd();		
 		//decide when to load next part...
 		//find last loaded key frame
 		last_loaded_key_frame = GetNearestKeyframe(avi_parsing_pos);		
-		//Logging.MLog("okay");
 	}
 	
 	function clear_memory(nk:Int, num:Int):Void //forget previously loaded parts - clear all frames except [nk...num] 

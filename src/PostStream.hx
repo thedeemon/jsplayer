@@ -73,7 +73,7 @@ class PostStream //extends URLStream
 	
 	function onStateChange() {
 		curState = xr.readyState;
-		Logging.MLog("PostStream.onStateChange state="+ curState);
+		//Logging.MLog("PostStream.onStateChange state="+ curState);
 		if (stateChanging) return;
 		stateChanging = true;
 		if (onProgress != null && (curState==3 || curState==4)) {
