@@ -1,14 +1,12 @@
 package ;
-import haxe.macro.Expr;
-import haxe.macro.Context;
+import haxe.Log;
 
 class Logging 
 {
-	public static inline function MLog(msg:String)
+	public static inline function MLog(msg:String, ?pos:haxe.PosInfos)
 	{
 		#if logging
-		//DataLoader.JSLog(msg); 
-		trace(msg);
+		Log.trace(msg, pos);
 		#end
 	}	
 	
