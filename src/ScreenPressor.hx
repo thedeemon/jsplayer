@@ -27,7 +27,7 @@ class ScreenPressor implements IVideoCodec
 
 	var cx : Int;
 	var cx1 : Int;
-	var ec : EntroCoderRC;
+	var ec : EntroCoder;
     var SC_CXSHIFT : Int;
 	var X : Int;
 	var Y : Int;
@@ -145,7 +145,7 @@ class ScreenPressor implements IVideoCodec
 			}
 			//rc.DecodeBegin(src);
 			RenewI();
-			ec.DecodeBegin(src, 1);
+			ec.decodeBegin(src, 1);
 
 			cx = cx1 = 0;
 			var k = 0; 
@@ -286,7 +286,7 @@ class ScreenPressor implements IVideoCodec
 		}*/
 		//var pDst = buffer_address;
 		//rc.DecodeBegin(src);
-		ec.DecodeBegin(src, 1);
+		ec.decodeBegin(src, 1);
 
 		var t = ec.decodeX(); //.DecodeVal(xxtab, 256, SC_XXSTEP);
 		var xx1 = ec.decodeX(); // rc.DecodeVal(xxtab, 256, SC_XXSTEP);

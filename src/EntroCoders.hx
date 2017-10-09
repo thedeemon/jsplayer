@@ -5,7 +5,22 @@ import js.html.Uint8Array;
 import js.html.Uint32Array;
 
 
-class EntroCoderRC { 
+interface EntroCoder {
+	function preinit():Void;
+	function renewI():Void;
+	function decodeBegin(src : Uint8Array, pos0 : Int):Void;
+	function decodeClr(cxi:Int):Int;
+	function decodeN(ptype:Int):Int;
+	function decodeP(ptype:Int):Int;
+	function decodeX():Int;
+	function decodeBT():Int;
+	function decodeBN():Int;
+	function decodeSXY(n:Int):Int;
+	function decodeMX():Int;
+	function decodeMY():Int;	
+}
+
+class EntroCoderRC implements EntroCoder { 
 	var rc : RangeCoder;
 
 	var cntab : Uint32Array; 
@@ -48,14 +63,14 @@ class EntroCoderRC {
 		mvtab[1] = new Uint32Array(ScreenPressor.msr_y*2 + 1);	
 	}
 	
-	public function preinit() {
+	public function preinit():Void {
 		for (chan in 0...3)
 			for (ctx in 0...SC_CXMAX) {
 				cntab[((chan << 12) + ctx) * CNTABSZ + 16] = 0;
 			}				
 	}
 	
-	public function renewI() {
+	public function renewI():Void {
 		for (chan in 0...3)
 			for (ctx in 0...SC_CXMAX) {
 				var p = (chan * 4096 + ctx) * CNTABSZ;
@@ -106,7 +121,7 @@ class EntroCoderRC {
 		mvtab[1][msr_y * 2] = msr_y * 2; //memset(mvtab(1), msr_y * 2, msr_y * 2);				
 	}
 	
-	public function DecodeBegin(src : Uint8Array, pos0 : Int):Void {
+	public function decodeBegin(src : Uint8Array, pos0 : Int):Void {
 		rc.DecodeBegin(src, pos0);
 	}
 	
