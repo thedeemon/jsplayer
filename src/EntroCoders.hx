@@ -1,9 +1,8 @@
 package ;
 import RangeCoder;
-
+import ANS;
 import js.html.Uint8Array;
 import js.html.Uint32Array;
-
 
 interface EntroCoder {
 	function preinit():Void;
@@ -18,6 +17,13 @@ interface EntroCoder {
 	function decodeSXY(n:Int):Int;
 	function decodeMX():Int;
 	function decodeMY():Int;	
+	function canDecodeBool():Bool;
+	function decodeBool():Bool;
+}
+
+class CC { //contexts consts
+	public static inline var CXMAX = 4096;
+	public static inline var NCXMAX = 6;	
 }
 
 class EntroCoderRC implements EntroCoder { 
@@ -34,9 +40,7 @@ class EntroCoderRC implements EntroCoder {
 	
 	static inline var SC_STEP = 400;
 	static inline var SC_NSTEP = 400;
-	static inline var SC_CXMAX = 4096;
 	static inline var SC_BTSTEP = 10; 
-	static inline var SC_NCXMAX = 6;
 	static inline var SC_BTNSTEP = 20;
 	static inline var SC_SXYSTEP = 100; 
 	static inline var SC_MSTEP = 100; 
@@ -46,10 +50,10 @@ class EntroCoderRC implements EntroCoder {
 
 	public function new() {
 		rc = new RangeCoder();		
-		cntab = new Uint32Array(3 * 4096 * CNTABSZ);
+		cntab = new Uint32Array(3 * CC.CXMAX * CNTABSZ);
 		ptypetab = new Array<Uint32Array>();
 		ntab = new Array<Uint32Array>();
-		for(i in 0...6) {
+		for(i in 0...CC.NCXMAX) {
 			ptypetab[i] = new Uint32Array(7);
 			ntab[i] = new Uint32Array(257);
 		}
@@ -65,14 +69,14 @@ class EntroCoderRC implements EntroCoder {
 	
 	public function preinit():Void {
 		for (chan in 0...3)
-			for (ctx in 0...SC_CXMAX) {
+			for (ctx in 0...CC.CXMAX) {
 				cntab[((chan << 12) + ctx) * CNTABSZ + 16] = 0;
 			}				
 	}
 	
 	public function renewI():Void {
 		for (chan in 0...3)
-			for (ctx in 0...SC_CXMAX) {
+			for (ctx in 0...CC.CXMAX) {
 				var p = (chan * 4096 + ctx) * CNTABSZ;
 				if (cntab[p + 16] != 256) { //fill if changed
 					for(i in 0...256)
@@ -82,7 +86,7 @@ class EntroCoderRC implements EntroCoder {
 					cntab[p + 16] = 256;
 				}				
 			}
-		for (ncx in 0...SC_NCXMAX) {
+		for (ncx in 0...CC.NCXMAX) {
 			var p = ntab[ncx];
 			for(i in 0...256)
 				p[i] = 1;
@@ -167,4 +171,126 @@ class EntroCoderRC implements EntroCoder {
 		return rc.DecodeVal(mvtab[1], ScreenPressor.msr_y*2, SC_MSTEP);
 	}
 	
+	public function canDecodeBool() { return false; }	
+	public function decodeBool():Bool { return false;  }
 }//EntroCoderRC
+
+class EntroCoderANS extends DecReceiver implements EntroCoder {
+	var rans : Rans;
+	var nDec : Int;
+	var cntab : Array<Context>; 
+	var ptypetab : Array<FixedSizeRansCtx>; //[6] (6)
+	var ntab : Array<FixedSizeRansCtx>; //[6] (256)
+	var xxtab : FixedSizeRansCtx; //(256)
+	var ntab2 : FixedSizeRansCtx; //(256)
+	var bttab : FixedSizeRansCtx; //(5)
+	var sxytab : Array<FixedSizeRansCtx>; // [4]  (16)
+	var mvtab : Array<FixedSizeRansCtx>; // [2] (512)
+	
+	public function new() {
+		super();
+		cntab = new Array<Context>();
+		for (i in 0 ... CC.CXMAX * 3) cntab[i] = new Context();
+		ntab = new Array<FixedSizeRansCtx>();
+		for (i in 0 ... CC.NCXMAX)	ntab[i] = new FixedSizeRansCtx(256);
+		ptypetab = new Array<FixedSizeRansCtx>();
+		for (i in 0...6) ptypetab[i] = new FixedSizeRansCtx(6);
+		xxtab = new FixedSizeRansCtx(256);
+		ntab2 = new FixedSizeRansCtx(256);
+		bttab = new FixedSizeRansCtx(5);
+		sxytab = new Array<FixedSizeRansCtx>();
+		for (i in 0...4) sxytab[i] = new FixedSizeRansCtx(16);
+		mvtab = new Array<FixedSizeRansCtx>();
+		for (i in 0...2) mvtab[i] = new FixedSizeRansCtx(512);
+	}
+	
+	public function preinit():Void {}
+	
+	public function renewI():Void {
+		for (i in 0... CC.CXMAX * 3)
+			cntab[i].renew();
+		for (i in 0 ... CC.NCXMAX)
+			ntab[i].renew();
+	}
+	
+	public function decodeBegin(src : Uint8Array, pos0 : Int):Void {
+		rans = new Rans(src, pos0);
+		nDec = 0;
+	}
+	
+	public function decodeClr(cxi:Int):Int {
+		var dcx = cntab[cxi];
+		var c : Int;// = 0;
+		if (dcx.decode(rans.decGet())) {
+			c = dcx.c;
+			rans.decAdvance(dcx.cumFreq, dcx.freq);
+		} else {
+			c = rans.raw();
+			dcx.update(c);
+		}
+		nDec++;
+		if (nDec == Rans.B) {
+			rans.reinit();
+			nDec = 0;
+		}
+		return c;
+	}
+	
+	public function canDecodeBool() { return true; }
+	
+	public function decodeBool():Bool {
+		var f = rans.decGet();
+		var flag : Bool = f >= Rans.PROB_SCALE >> 1;
+		rans.decAdvance( (flag ? Rans.PROB_SCALE >> 1 : 0) , Rans.PROB_SCALE >> 1);
+		nDec++;
+		if (nDec==Rans.B) {
+			rans.reinit();
+			nDec = 0;
+		}
+		return flag;		
+	}	
+	
+	function decodeF(dcx:FixedSizeRansCtx):Int {
+		dcx.decode( rans.decGet(), this);
+		rans.decAdvance(cumFreq, freq);
+		nDec++;
+		if (nDec == Rans.B) {
+			rans.reinit();
+			nDec = 0;
+		}
+		return c;
+	}
+	
+	public function decodeN(ptype:Int):Int {
+		return decodeF(ntab[ptype]);
+	}
+	
+	public function decodeP(ptype:Int):Int {
+		return decodeF(ptypetab[ptype]);
+	}
+	
+	public function decodeX():Int {
+		return decodeF(xxtab);
+	}
+	
+	public function decodeBT():Int {
+		return decodeF(bttab);
+	}
+	
+	public function decodeBN():Int {
+		return decodeF(ntab2);
+	}
+	
+	public function decodeSXY(n:Int):Int {
+		return decodeF(sxytab[n]);
+	}
+	
+	public function decodeMX():Int {
+		return decodeF(mvtab[0]);
+	}
+	
+	public function decodeMY():Int {
+		return decodeF(mvtab[1]);
+	}
+	
+}//EntroCoderANS

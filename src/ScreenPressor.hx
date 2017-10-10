@@ -43,6 +43,7 @@ class ScreenPressor implements IVideoCodec
 	var insign_lines : Int;
 	var decodedI : Bool;
 	var last_one_was_flat : Null<Int>;
+	var decodingBools : Bool;
 	
 	inline function MAKECX1():Void
 	{
@@ -52,14 +53,15 @@ class ScreenPressor implements IVideoCodec
 		
 	static inline var addr_end_tables = 0;// addr_mvtab + (msr_x * 2 + 1  + msr_y * 2 + 1) * 4;
 	
-	public function new(width:Int, height:Int, num_buffers:Int, bits_per_pixel:Int) //num_frames - number of decompressed frames to store in memory
+	public function new(width:Int, height:Int, num_buffers:Int, bits_per_pixel:Int, entro:EntroCoder) //num_frames - number of decompressed frames to store in memory
 	{
 		//trace("ScreenPressor.new: bpp=" + bits_per_pixel + " w=" + width + " h=" + height);
 		X = width; Y = height; bpp = bits_per_pixel;
 		decoder_state = zero_state;
 		decoder_context = null;
 		SC_CXSHIFT = bpp == 16 ? 0 : 2;		
-		ec = new EntroCoderRC();
+		ec = entro;
+		decodingBools = ec.canDecodeBool();
 		nbx = Std.int((X + 15) / 16);
 		nby = Std.int((Y + 15) / 16);
 		bts = new Vector(nbx * nby);		
@@ -326,6 +328,7 @@ class ScreenPressor implements IVideoCodec
 		cx = cx1 = 0;
 		var dstbytes = new Uint8Array( dst.buffer );
 		//Logging.MLog("DecP main loop");
+		var lastmx = 0, lastmy = 0;
 		for(by in 0...nby)
 			for(bx in 0...nbx) {
 				var y16 = by * 16; 
@@ -358,8 +361,13 @@ class ScreenPressor implements IVideoCodec
 					if (((bts[bi] - 1) & 2) > 0) { //motion vec
 						//trace("((bts[bi] - 1) & 2) > 0");
 						//trace("mvtab(0)=" + mvtab(0) + " msr_x=" + msr_x + " bytes_left=" + src.bytesAvailable);
-						var mx = ec.decodeMX() - msr_x;// rc.DecodeVal(mvtab[0], msr_x*2, SC_MSTEP);		mx -= msr_x;
-						var my = ec.decodeMY() - msr_y; //rc.DecodeVal(mvtab[1], msr_y*2, SC_MSTEP);	my -= msr_y;
+						var mx : Int, my : Int;
+						if (decodingBools && ec.decodeBool()) {
+							mx = lastmx; my = lastmy;
+						} else {
+							mx = ec.decodeMX() - msr_x;// rc.DecodeVal(mvtab[0], msr_x*2, SC_MSTEP);		mx -= msr_x;
+							my = ec.decodeMY() - msr_y; //rc.DecodeVal(mvtab[1], msr_y*2, SC_MSTEP);	my -= msr_y;
+						}
 						//Logging.MLog("mx=" + mx + " my=" + my);
 						for(y in y1...y2) {
 							var i = y * stride + x1;
