@@ -1,6 +1,7 @@
 package ;
 import RangeCoder;
 import ANS;
+import js.Lib;
 import js.html.Uint8Array;
 import js.html.Uint32Array;
 
@@ -211,9 +212,16 @@ class EntroCoderANS extends DecReceiver implements EntroCoder {
 			cntab[i].renew();
 		for (i in 0 ... CC.NCXMAX)
 			ntab[i].renew();
+		for (i in 0...6) ptypetab[i].renew();
+		xxtab.renew();
+		ntab2.renew();
+		bttab.renew();
+		for (i in 0...4) sxytab[i].renew();
+		for (i in 0...2) mvtab[i].renew();
 	}
 	
 	public function decodeBegin(src : Uint8Array, pos0 : Int):Void {
+		trace("decodeBegin pos0="+pos0 + " src.len=" + src.length);
 		rans = new Rans(src, pos0);
 		nDec = 0;
 	}
@@ -221,11 +229,20 @@ class EntroCoderANS extends DecReceiver implements EntroCoder {
 	public function decodeClr(cxi:Int):Int {
 		var dcx = cntab[cxi];
 		var c : Int;// = 0;
+		
+		//dbg
+		if (cxi == 3380) { 
+			Logging.MLog("decodeClr(3380): someFreq=" + rans.decGet());
+			dcx.show();
+		}
+		
 		if (dcx.decode(rans.decGet())) {
 			c = dcx.c;
+			if (c > 255) Lib.debug();
 			rans.decAdvance(dcx.cumFreq, dcx.freq);
 		} else {
 			c = rans.raw();
+			if (c > 255) Lib.debug();
 			dcx.update(c);
 		}
 		nDec++;

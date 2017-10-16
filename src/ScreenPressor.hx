@@ -53,19 +53,29 @@ class ScreenPressor implements IVideoCodec
 		
 	static inline var addr_end_tables = 0;// addr_mvtab + (msr_x * 2 + 1  + msr_y * 2 + 1) * 4;
 	
-	public function new(width:Int, height:Int, num_buffers:Int, bits_per_pixel:Int, entro:EntroCoder) //num_frames - number of decompressed frames to store in memory
+	public function new(width:Int, height:Int, num_buffers:Int, bits_per_pixel:Int) //num_frames - number of decompressed frames to store in memory
 	{
 		//trace("ScreenPressor.new: bpp=" + bits_per_pixel + " w=" + width + " h=" + height);
 		X = width; Y = height; bpp = bits_per_pixel;
 		decoder_state = zero_state;
 		decoder_context = null;
-		SC_CXSHIFT = bpp == 16 ? 0 : 2;		
-		ec = entro;
-		decodingBools = ec.canDecodeBool();
+		SC_CXSHIFT = bpp == 16 ? 0 : 2;				
 		nbx = Std.int((X + 15) / 16);
 		nby = Std.int((Y + 15) / 16);
 		bts = new Vector(nbx * nby);		
 		decodedI = false;
+	}
+	
+	function initEntro(version:Int):Bool { // => ok?
+		trace("initEntro version=" + version);
+		switch(version) {
+			case 2: ec = new EntroCoderRC();
+			case 3: ec = new EntroCoderANS();
+			default: trace("unknown version of ScreenPressor!"); return false;
+		}
+		decodingBools = ec.canDecodeBool();
+		ec.preinit();
+		return true;
 	}
 	
 	public function StopAndClean():Void
@@ -75,8 +85,6 @@ class ScreenPressor implements IVideoCodec
 	
 	public function Preinit(insignificant_lines : Int):Void //must be called after memory is allocated
 	{
-		//trace("SP.Preinit");
-		ec.preinit();
 		insignificant_blocks = nbx * Std.int((insignificant_lines + 15) / 16);
 		insign_lines = insignificant_lines;
 	}
@@ -112,12 +120,14 @@ class ScreenPressor implements IVideoCodec
 		var end = X * Y;
 		var clr = 0; var lasti = di;
 		
-		//trace("SP.DecompressI src.size=" + src.length + " bpp="+bpp + " rnd=" + Math.random());
+		Logging.MLog("SP.DecompressI src.size=" + src.length + " bpp=" + bpp + " rnd=" + Math.random());
+		Logging.on = false;
 		if (decoder_state == zero_state) {
 			//src.position = 0;
 		
 			var head = src[0];// .readByte();
-			if (head == 0x11) { //flat
+			var version = (head >> 4) + 1;
+			if ((head & 0xF) == 1) { //flat
 				var clr = 0;
 				if (bpp == 16) {
 					var clr16 = src[0] + src[1] * 256;// .readUnsignedShort();
@@ -142,10 +152,13 @@ class ScreenPressor implements IVideoCodec
 				return zero_state;
 			} else
 				last_one_was_flat = null;
-			if (head != 0x12) {
+			if ((head & 0xF) != 2) {
 				trace("unknown version of the codec"); return error_occured;
 			}
-			//rc.DecodeBegin(src);
+			if (ec == null) {
+				if (!initEntro(version)) return error_occured;
+				Logging.MLog("SC_CXSHIFT=" + SC_CXSHIFT);
+			}
 			RenewI();
 			ec.decodeBegin(src, 1);
 
@@ -155,20 +168,25 @@ class ScreenPressor implements IVideoCodec
 			lasti = di;
 			while(k<X+1) {
 				//var r = rc.DecodeValUni(cntab, (cx+cx1)*CNTABSZ, SC_STEP);
+				Logging.MLog("cx="+cx + " cx1="+cx1);
 				var r = ec.decodeClr(cx+cx1);
 				cx1 = (cx<<6)&0xFC0;
-				cx = r>>SC_CXSHIFT;
+				cx = r >> SC_CXSHIFT;
+				Logging.MLog("cx="+cx + " cx1="+cx1);
 				var g = ec.decodeClr(4096 + cx+cx1);
 				cx1 = (cx<<6)&0xFC0;
-				cx = g>>SC_CXSHIFT;
+				cx = g >> SC_CXSHIFT;
+				Logging.MLog("cx="+cx + " cx1="+cx1);
 				var b = ec.decodeClr(2*4096 + cx+cx1);
 				cx1 = (cx<<6)&0xFC0;
-				cx = b>>SC_CXSHIFT;			
+				cx = b >> SC_CXSHIFT;			
+				Logging.MLog("cx=" + cx + " cx1=" + cx1);
+				Logging.MLog("rgb=" + r + "," + g + "," + b);
 			
 				var n = ec.decodeN(0); //rc.DecodeVal(ntab[0], 256, SC_NSTEP);
+				Logging.MLog("n=" + n);
 				clr = (b << 16) + (g << 8) + r;
 				k += n;
-
 				while(n-->0) {
 					dst[di] = clr;
 					di++;
@@ -189,23 +207,31 @@ class ScreenPressor implements IVideoCodec
 			lasti = di - 1;
 		}*/
 		var last_di_segment = di & 0xFFFF0000; //?
-		
-		while(di < end) {
+		Logging.MLog("main loop");
+		while (di < end) {
+			var lastptype = ptype;
 			ptype = ec.decodeP(ptype);//rc.DecodeVal(ptypetab[ptype], 6, SC_UNSTEP);
-			if (ptype==0) {
+			Logging.MLog("decodeP("+lastptype+") => "+ptype);
+			if (ptype == 0) {
+				Logging.MLog("cx=" + cx + " cx1=" + cx1);
 				var r = ec.decodeClr(cx + cx1);//rc.DecodeValUni(cntab, (cx+cx1)*CNTABSZ, SC_STEP);
 				cx1 = (cx<<6)&0xFC0;
 				cx = r >> SC_CXSHIFT;
+				Logging.MLog("cx=" + cx + " cx1=" + cx1);
 				var g = ec.decodeClr(4096 + cx+cx1);
 				cx1 = (cx<<6)&0xFC0;
 				cx = g >> SC_CXSHIFT;
+				Logging.MLog("cx=" + cx + " cx1=" + cx1);
 				var b = ec.decodeClr(2*4096 + cx+cx1);
 				cx1 = (cx<<6)&0xFC0;
 				cx = b >> SC_CXSHIFT;		
 				clr = (b << 16) + (g << 8) + r;
+				Logging.MLog("cx=" + cx + " cx1=" + cx1);
+				Logging.MLog("rgb=" + r + "," + g + "," + b);
 			}			
 			var n = ec.decodeN(ptype); //rc.DecodeVal(ntab[ptype], 256, SC_NSTEP);
-
+			Logging.MLog("n="+n);
+			
 			switch(ptype) {
 				case 0:  
 					while (n-->0) {
@@ -257,9 +283,13 @@ class ScreenPressor implements IVideoCodec
 				}
 			}*/
 		}
-		
+		Logging.on = true;
 		//prev_frame = buffer_address;
 		prevFrame = dst;
+
+		if (prevFrame != null && prevFrame.length>620000)
+			Logging.MLog("prev[619092]=" + prevFrame[619092]);
+		
 		decoder_state = zero_state;
 		decodedI = true;
 		return zero_state;
@@ -272,7 +302,10 @@ class ScreenPressor implements IVideoCodec
 	
 	public function DecompressP(src:Uint8Array, dst:Int32Array):PFrameResult 
 	{
-		//trace("SP decompressP sz=" + src.length + " bpp=" + bpp);
+		Logging.MLog("SP decompressP sz=" + src.length + " bpp=" + bpp + " dst=prev? " + (dst == prevFrame));
+		if (prevFrame != null && prevFrame.length>620000)
+			Logging.MLog("prev[619092]=" + prevFrame[619092]);
+			
 		if (src.length == 0 || !decodedI)
 			return { data_pnt: prevFrame, significant_changes : false};
 		//src.position = 0;
@@ -297,7 +330,7 @@ class ScreenPressor implements IVideoCodec
 		var xx2 = ec.decodeX(); // rc.DecodeVal(xxtab, 256, SC_XXSTEP);
 		xx2 = (xx2<<8)+t;
 
-		//Logging.MLog("xx1=" +xx1 + " xx2=" + xx2 + " bts=" + bts.length);
+		Logging.MLog("xx1=" +xx1 + " xx2=" + xx2 + " bts=" + bts.length);
 		
 		//decode block types		
 		for (i in 0...bts.length) ///memset(bts,0,nbx*nby);
@@ -307,7 +340,7 @@ class ScreenPressor implements IVideoCodec
 		while(x<=xx2) {
 			var block_type = ec.decodeBT();//rc.DecodeVal(bttab, 5, SC_BTSTEP);
 			var n = ec.decodeBN(); //rc.DecodeVal(ntab2, 256, SC_BTNSTEP);
-			//trace("bts_i=" + x + " blocktype=" + block_type + " n=" + n);
+			Logging.MLog("bts_i=" + x + " blocktype=" + block_type + " n=" + n);
 			for(i in 0...n) {
 				bts[x] = block_type;		
 				x++;
@@ -342,7 +375,7 @@ class ScreenPressor implements IVideoCodec
 				var bi = by * nbx + bx;
 				
 				if (bts[bi] > 0) {
-					//Logging.MLog("bts[" + bi + "]=" + bts[bi]);
+					Logging.MLog("bts[" + bi + "]=" + bts[bi]);
 					if (((bts[bi] - 1) & 1) > 0) {
 						//trace("((bts[bi] - 1) & 1) > 0");
 						for(y in y1...y2) {
@@ -355,7 +388,7 @@ class ScreenPressor implements IVideoCodec
 						y1 = ec.decodeSXY(1) + y16; //rc.DecodeVal(sxytab[1], 16, SC_SXYSTEP);
 						x2 = ec.decodeSXY(2) + x16 + 1;// rc.DecodeVal(sxytab[2], 16, SC_SXYSTEP);
 						y2 = ec.decodeSXY(3) + y16 + 1; //rc.DecodeVal(sxytab[3], 16, SC_SXYSTEP);
-						//Logging.MLog("x1=" + x1 + " y1=" + y1 + " x2=" + x2 + " y2=" + y2);
+						Logging.MLog("x1=" + x1 + " y1=" + y1 + " x2=" + x2 + " y2=" + y2);
 					}
 				
 					if (((bts[bi] - 1) & 2) > 0) { //motion vec
@@ -368,7 +401,8 @@ class ScreenPressor implements IVideoCodec
 							mx = ec.decodeMX() - msr_x;// rc.DecodeVal(mvtab[0], msr_x*2, SC_MSTEP);		mx -= msr_x;
 							my = ec.decodeMY() - msr_y; //rc.DecodeVal(mvtab[1], msr_y*2, SC_MSTEP);	my -= msr_y;
 						}
-						//Logging.MLog("mx=" + mx + " my=" + my);
+						lastmx = mx; lastmy = my;
+						Logging.MLog("mx=" + mx + " my=" + my);
 						for(y in y1...y2) {
 							var i = y * stride + x1;
 							var j = (y + my) * stride + (x1 + mx);							
@@ -385,34 +419,35 @@ class ScreenPressor implements IVideoCodec
 							var di = i;// pDst + i;
 							lastptype = ptype;
 							ptype = ec.decodeP(lastptype);// rc.DecodeVal(ptypetab[lastptype], 6, SC_UNSTEP);
-							//Logging.MLog("DecP (lastptype=" + lastptype + ") -> ptype=" + ptype);
+							Logging.MLog("DecP (lastptype=" + lastptype + ") -> ptype=" + ptype);
 							if (ptype == 0) {
 								///pSrc = DecodeRGB(pSrc, r, g, b);					
-								//Logging.MLog("cx=" + cx+ " cx1=" + cx1);
+								Logging.MLog("cx=" + cx+ " cx1=" + cx1);
 								var r = ec.decodeClr(cx + cx1);
 								MAKECX1();
 								cx = r >> SC_CXSHIFT;
-								//Logging.MLog("cx=" + cx+ " cx1=" + cx1);
+								Logging.MLog("cx=" + cx+ " cx1=" + cx1);
 								var g = ec.decodeClr(4096 + cx+cx1);
 								MAKECX1();
 								cx = g >> SC_CXSHIFT;
-								//Logging.MLog("cx=" + cx+ " cx1=" + cx1);
+								Logging.MLog("cx=" + cx+ " cx1=" + cx1);
 								var b = ec.decodeClr(2*4096 + cx+cx1);
 								MAKECX1();
 								cx = b >> SC_CXSHIFT;		
 								clr = (b << 16) + (g << 8) + r;								
-								//Logging.MLog("rgb=" + r + " " +g + " " + b);
-								//Logging.MLog("cx=" + cx+ " cx1=" + cx1);
+								Logging.MLog("rgb=" + r + " " +g + " " + b);
+								Logging.MLog("cx=" + cx+ " cx1=" + cx1);
 							}
 						
 							var n = ec.decodeN(ptype);//rc.DecodeVal(ntab[ptype], 256, SC_NSTEP);
-							//Logging.MLog("DecN n=" + n);
+							Logging.MLog("DecN n=" + n);
 
 							for(c in 0...n) {								
 								switch(ptype) {
 									case 1: clr = dst[di - 1];//Memory.getI32(di-4);  ///r = pDst[i-3]; g = pDst[i-2]; b = pDst[i-1];	
 									case 2: clr = dst[di + off + 1];//Memory.getI32(di + off + 4); ///	r = pDst[i+off+3]; g = pDst[i+off+4]; b = pDst[i+off+5];					
 									case 3: clr = prevFrame[i];//Memory.getI32(prev_frame + i);
+											Logging.MLog(" prevFrame[" + i + "] = " + clr);
 									case 4:
 										/*var r = Memory.getByte(di-4) + Memory.getByte(di + off + 4) - Memory.getByte(di + off);
 										var g = Memory.getByte(di-3) + Memory.getByte(di + off + 5) - Memory.getByte(di + off+1);
@@ -446,7 +481,7 @@ class ScreenPressor implements IVideoCodec
 								cx1 = (clr & 0xFC00) >> 4;
 								cx = clr >> 18;
 							}
-							//Logging.MLog("cx=" + cx);
+							Logging.MLog("cx=" + cx + " cx1=" + cx1);
 						}//while y<y2						
 					}
 				} else { //bts[] = 0
@@ -458,10 +493,11 @@ class ScreenPressor implements IVideoCodec
 					}
 				}
 			}//bx			
-		//Logging.MLog("DecP main loop end");
+		Logging.MLog("DecP main loop end");
 		//prev_frame = buffer_address; //?
 		prevFrame = dst;
 		last_one_was_flat = null;
+		//Logging.on = false;
 		return {data_pnt : prevFrame, significant_changes : signif};
 	}
 	

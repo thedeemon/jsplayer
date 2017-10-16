@@ -103,7 +103,7 @@ class Manager
 	private function video_info_cb(vi : VideoInfo):Void
 	{			
 		switch(vi.codec) {
-			case codec_screenpressor: decoder =	new ScreenPressor(vi.X, vi.Y, num_buffers, vi.bpp, new EntroCoderRC());
+			case codec_screenpressor: decoder =	new ScreenPressor(vi.X, vi.Y, num_buffers, vi.bpp);
 #if msvc			
 			case codec_msvc16: decoder = new MSVideo1_16bit(vi.X, vi.Y, num_buffers);
 			case codec_msvc8: decoder = new MSVideo1_8bit(vi.X, vi.Y, num_buffers, vi.palette);			

@@ -3,10 +3,13 @@ import haxe.Log;
 
 class Logging 
 {
+	public static var on : Bool = true;
+	
 	public static inline function MLog(msg:String, ?pos:haxe.PosInfos)
 	{
 		#if logging
-		Log.trace(msg, pos);
+		if (on)
+			Log.trace(msg, pos);
 		#end
 	}	
 	

@@ -20,6 +20,7 @@ class Rans {
 	}	
 	
 	function reinitImpl(srcdata:Uint8Array, i:Int):Void {
+		trace("Rans.start at "+i);
 		data = srcdata;
 		var x = data[i+0];
 		x |= data[i+1] << 8;
@@ -565,17 +566,17 @@ class Cx6 extends CxU {
 	}
 	
 	override public function show() {
-		/*var S = symbols.length;
-		Main.print("Cx6 k=" + kind + " d=" + d + " S=" + S + " fshift=" + fshift);
+		var S = symbols.length;
+		Logging.MLog("Cx6 k=" + kind + " d=" + d + " S=" + S + " fshift=" + fshift);
 		for(i in 0...S) 
 			if (cnts[i] > 0) {
 				var c = symbols[i];
 				var p0 = c & (S-1);
 				var dist = i - p0;
 				if (dist < 0) dist += S;
-				Main.print("tab["+i+"]={ c="+c+" dist="+dist+" p0="+p0+" fr="+readFreq(i)+","+readCumFreq(i)+" cnt="+cnts[i]+"} ");
+				Logging.MLog("tab["+i+"]={ c="+c+" dist="+dist+" p0="+p0+" fr="+readFreq(i)+","+readCumFreq(i)+" cnt="+cnts[i]+"} ");
 			}
-		Main.print("cntsum="+cnts[S]);		*/
+		Logging.MLog("cntsum="+cnts[S]);		
 	}
 	
 	function calcSum() {
@@ -637,9 +638,15 @@ class Cx6 extends CxU {
 			var x = (someFreq - cumFr) >> fshift; //x = c - lowerSym - 1
 			c = x + lowerSym + 1;
 			fr_cumFreq = lcumFreq + lfreq + (x << fshift);
+			if (c > 255) { 
+				trace("Cx6.decode(" + someFreq + ") lfreq=" + lfreq + " lcumFreq=" + lcumFreq + " fshift=" + fshift
+				 + " x=" + x + " lowerSym="+lowerSym +" fr_cumFreq="+fr_cumFreq + " c="+c);
+				js.Lib.debug();
+			}
 		} else { // c < all known
 			c = someFreq >> fshift;
 			fr_cumFreq = c << fshift;
+			if (c > 255) js.Lib.debug();
 		}
 		//interval = fr;
 		rcv.freq = fr_freq; rcv.cumFreq = fr_cumFreq; rcv.c = c;
