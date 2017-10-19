@@ -173,23 +173,23 @@ class ScreenPressor implements IVideoCodec
 			lasti = di;
 			while(k<X+1) {
 				//var r = rc.DecodeValUni(cntab, (cx+cx1)*CNTABSZ, SC_STEP);
-				Logging.MLog("cx="+cx + " cx1="+cx1);
+				Logging.dbg("cx="+cx + " cx1="+cx1);
 				var r = ec.decodeClr(cx+cx1);
 				cx1 = (cx<<6)&0xFC0;
 				cx = r >> SC_CXSHIFT;
-				Logging.MLog("cx="+cx + " cx1="+cx1);
+				Logging.dbg("cx="+cx + " cx1="+cx1);
 				var g = ec.decodeClr(4096 + cx+cx1);
 				cx1 = (cx<<6)&0xFC0;
 				cx = g >> SC_CXSHIFT;
-				Logging.MLog("cx="+cx + " cx1="+cx1);
+				Logging.dbg("cx="+cx + " cx1="+cx1);
 				var b = ec.decodeClr(2*4096 + cx+cx1);
 				cx1 = (cx<<6)&0xFC0;
 				cx = b >> SC_CXSHIFT;			
-				Logging.MLog("cx=" + cx + " cx1=" + cx1);
-				Logging.MLog("rgb=" + r + "," + g + "," + b);
+				Logging.dbg("cx=" + cx + " cx1=" + cx1);
+				Logging.dbg("rgb=" + r + "," + g + "," + b);
 			
 				var n = ec.decodeN(0); //rc.DecodeVal(ntab[0], 256, SC_NSTEP);
-				Logging.MLog("n=" + n);
+				Logging.dbg("n=" + n);
 				clr = (b << 16) + (g << 8) + r;
 				k += n;
 				while(n-->0) {
@@ -212,30 +212,30 @@ class ScreenPressor implements IVideoCodec
 			lasti = di - 1;
 		}*/
 		var last_di_segment = di & 0xFFFF0000; //?
-		Logging.MLog("main loop");
+		Logging.dbg("main loop");
 		while (di < end) {
 			var lastptype = ptype;
 			ptype = ec.decodeP(ptype);//rc.DecodeVal(ptypetab[ptype], 6, SC_UNSTEP);
-			Logging.MLog("decodeP("+lastptype+") => "+ptype);
+			Logging.dbg("decodeP("+lastptype+") => "+ptype);
 			if (ptype == 0) {
-				Logging.MLog("cx=" + cx + " cx1=" + cx1);
+				Logging.dbg("cx=" + cx + " cx1=" + cx1);
 				var r = ec.decodeClr(cx + cx1);//rc.DecodeValUni(cntab, (cx+cx1)*CNTABSZ, SC_STEP);
 				cx1 = (cx<<6)&0xFC0;
 				cx = r >> SC_CXSHIFT;
-				Logging.MLog("cx=" + cx + " cx1=" + cx1);
+				Logging.dbg("cx=" + cx + " cx1=" + cx1);
 				var g = ec.decodeClr(4096 + cx+cx1);
 				cx1 = (cx<<6)&0xFC0;
 				cx = g >> SC_CXSHIFT;
-				Logging.MLog("cx=" + cx + " cx1=" + cx1);
+				Logging.dbg("cx=" + cx + " cx1=" + cx1);
 				var b = ec.decodeClr(2*4096 + cx+cx1);
 				cx1 = (cx<<6)&0xFC0;
 				cx = b >> SC_CXSHIFT;		
 				clr = (b << 16) + (g << 8) + r;
-				Logging.MLog("cx=" + cx + " cx1=" + cx1);
-				Logging.MLog("rgb=" + r + "," + g + "," + b);
+				Logging.dbg("cx=" + cx + " cx1=" + cx1);
+				Logging.dbg("rgb=" + r + "," + g + "," + b);
 			}			
 			var n = ec.decodeN(ptype); //rc.DecodeVal(ntab[ptype], 256, SC_NSTEP);
-			Logging.MLog("n="+n);
+			Logging.dbg("n="+n);
 			
 			switch(ptype) {
 				case 0:  
@@ -269,18 +269,9 @@ class ScreenPressor implements IVideoCodec
 					}
 					lasti = di - 1;
 			}			
-			//maskcx1 = 0xFF00; shiftcx1 = 2; shiftcx = 16;
 			cx1 = (clr & maskcx1) >> shiftcx1;
 			cx = clr >> shiftcx;
-			
-			/*if (bpp == 16) {
-				cx1 = (clr & 0xFF00) >> 2;
-				cx = (clr >> 16);
-			} else {
-				cx1 = (clr & 0xFC00) >> 4;
-				cx = clr >> 18;
-			}*/
-			
+						
 			/*if ((di & 0xFFFF0000) != last_di_segment) {//tmp
 				last_di_segment = di & 0xFFFF0000;
 				if (src.position - last_pos > 30000) {
@@ -292,11 +283,7 @@ class ScreenPressor implements IVideoCodec
 			}*/
 		}
 		Logging.on = true;
-		//prev_frame = buffer_address;
 		prevFrame = dst;
-
-		if (prevFrame != null && prevFrame.length>620000)
-			Logging.MLog("prev[619092]=" + prevFrame[619092]);
 		
 		decoder_state = zero_state;
 		decodedI = true;
@@ -311,13 +298,11 @@ class ScreenPressor implements IVideoCodec
 	public function DecompressP(src:Uint8Array, dst:Int32Array):PFrameResult 
 	{
 		Logging.MLog("SP decompressP sz=" + src.length + " bpp=" + bpp + " dst=prev? " + (dst == prevFrame));
-		if (prevFrame != null && prevFrame.length>620000)
-			Logging.MLog("prev[619092]=" + prevFrame[619092]);
 			
 		if (src.length == 0 || !decodedI)
 			return { data_pnt: prevFrame, significant_changes : false};
 
-		var changes = src[0];// .readByte();
+		var changes = src[0];
 		if (changes == 0)
 			return { data_pnt: prevFrame, significant_changes : false};
 
@@ -335,7 +320,7 @@ class ScreenPressor implements IVideoCodec
 		var xx2 = ec.decodeX(); // rc.DecodeVal(xxtab, 256, SC_XXSTEP);
 		xx2 = (xx2<<8)+t;
 
-		Logging.MLog("xx1=" +xx1 + " xx2=" + xx2 + " bts=" + bts.length);
+		Logging.dbg("xx1=" +xx1 + " xx2=" + xx2 + " bts=" + bts.length);
 		
 		//decode block types		
 		for (i in 0...bts.length) ///memset(bts,0,nbx*nby);
@@ -345,7 +330,7 @@ class ScreenPressor implements IVideoCodec
 		while(x<=xx2) {
 			var block_type = ec.decodeBT();//rc.DecodeVal(bttab, 5, SC_BTSTEP);
 			var n = ec.decodeBN(); //rc.DecodeVal(ntab2, 256, SC_BTNSTEP);
-			Logging.MLog("bts_i=" + x + " blocktype=" + block_type + " n=" + n);
+			Logging.dbg("bts_i=" + x + " blocktype=" + block_type + " n=" + n);
 			for(i in 0...n) {
 				bts[x] = block_type;		
 				x++;
@@ -380,7 +365,7 @@ class ScreenPressor implements IVideoCodec
 				var bi = by * nbx + bx;
 				
 				if (bts[bi] > 0) {
-					Logging.MLog("bts[" + bi + "]=" + bts[bi]);
+					Logging.dbg("bts[" + bi + "]=" + bts[bi]);
 					if (((bts[bi] - 1) & 1) > 0) {
 						for(y in y1...y2) {
 							var i = y*stride + x1;							
@@ -391,7 +376,7 @@ class ScreenPressor implements IVideoCodec
 						y1 = ec.decodeSXY(1) + y16; //rc.DecodeVal(sxytab[1], 16, SC_SXYSTEP);
 						x2 = ec.decodeSXY(2) + x16 + 1;// rc.DecodeVal(sxytab[2], 16, SC_SXYSTEP);
 						y2 = ec.decodeSXY(3) + y16 + 1; //rc.DecodeVal(sxytab[3], 16, SC_SXYSTEP);
-						Logging.MLog("x1=" + x1 + " y1=" + y1 + " x2=" + x2 + " y2=" + y2);
+						Logging.dbg("x1=" + x1 + " y1=" + y1 + " x2=" + x2 + " y2=" + y2);
 					}
 				
 					if (((bts[bi] - 1) & 2) > 0) { //motion vec
@@ -405,13 +390,12 @@ class ScreenPressor implements IVideoCodec
 							my = ec.decodeMY() - msr_y; //rc.DecodeVal(mvtab[1], msr_y*2, SC_MSTEP);	my -= msr_y;
 						}
 						lastmx = mx; lastmy = my;
-						Logging.MLog("mx=" + mx + " my=" + my);
+						Logging.dbg("mx=" + mx + " my=" + my);
 						for(y in y1...y2) {
 							var i = y * stride + x1;
 							var j = (y + my) * stride + (x1 + mx);							
 							for (x in 0...(x2 - x1)) ///memcpy(&pDst[i], &prev[j], (x2-x1)*3);
 								dst[i + x] = prevFrame[j + x];
-								//Memory.setI32(pDst + i + x * 4, Memory.getI32(prev_frame + j + x * 4));
 						}
 					} else { //data
 						x = x1; var y = y1; 
@@ -422,28 +406,28 @@ class ScreenPressor implements IVideoCodec
 							var di = i;// pDst + i;
 							lastptype = ptype;
 							ptype = ec.decodeP(lastptype);// rc.DecodeVal(ptypetab[lastptype], 6, SC_UNSTEP);
-							Logging.MLog("DecP (lastptype=" + lastptype + ") -> ptype=" + ptype);
+							Logging.dbg("DecP (lastptype=" + lastptype + ") -> ptype=" + ptype);
 							if (ptype == 0) {
 								///pSrc = DecodeRGB(pSrc, r, g, b);					
-								Logging.MLog("cx=" + cx+ " cx1=" + cx1);
+								Logging.dbg("cx=" + cx+ " cx1=" + cx1);
 								var r = ec.decodeClr(cx + cx1);
 								MAKECX1();
 								cx = r >> SC_CXSHIFT;
-								Logging.MLog("cx=" + cx+ " cx1=" + cx1);
+								Logging.dbg("cx=" + cx+ " cx1=" + cx1);
 								var g = ec.decodeClr(4096 + cx+cx1);
 								MAKECX1();
 								cx = g >> SC_CXSHIFT;
-								Logging.MLog("cx=" + cx+ " cx1=" + cx1);
+								Logging.dbg("cx=" + cx+ " cx1=" + cx1);
 								var b = ec.decodeClr(2*4096 + cx+cx1);
 								MAKECX1();
 								cx = b >> SC_CXSHIFT;		
 								clr = (b << 16) + (g << 8) + r;								
-								Logging.MLog("rgb=" + r + " " +g + " " + b);
-								Logging.MLog("cx=" + cx+ " cx1=" + cx1);
+								Logging.dbg("rgb=" + r + " " +g + " " + b);
+								Logging.dbg("cx=" + cx+ " cx1=" + cx1);
 							}
 						
 							var n = ec.decodeN(ptype);//rc.DecodeVal(ntab[ptype], 256, SC_NSTEP);
-							Logging.MLog("DecN n=" + n);
+							Logging.dbg("DecN n=" + n);
 
 							for(c in 0...n) {								
 								switch(ptype) {
@@ -472,26 +456,18 @@ class ScreenPressor implements IVideoCodec
 							cx1 = (clr & maskcx1) >> shiftcx1;
 							cx = clr >> shiftcx;
 							
-							/*if (bpp == 16) {
-								cx1 = (clr & 0xFF00) >> 2;
-								cx = clr >> 16;								
-							} else {
-								cx1 = (clr & 0xFC00) >> 4;
-								cx = clr >> 18;
-							}*/
-							Logging.MLog("cx=" + cx + " cx1=" + cx1);
+							Logging.dbg("cx=" + cx + " cx1=" + cx1);
 						}//while y<y2						
 					}
 				} else { //bts[] = 0
 					for(y in y1...y2) {
 						var i = y * stride + x1;						
 						for (x in 0...(x2 - x1)) ///memcpy(&pDst[i], &prev[i], (x2-x1)*3);
-							dst[i + x] = prevFrame[i + x];
-							//Memory.setI32(pDst + i + x * 4, Memory.getI32(prev_frame + i + x * 4));
+							dst[i + x] = prevFrame[i + x];							
 					}
 				}
 			}//bx			
-		Logging.MLog("DecP main loop end");
+		Logging.dbg("DecP main loop end");
 		//prev_frame = buffer_address; //?
 		prevFrame = dst;
 		last_one_was_flat = null;

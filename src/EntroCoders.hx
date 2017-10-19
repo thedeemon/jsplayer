@@ -221,7 +221,7 @@ class EntroCoderANS extends DecReceiver implements EntroCoder {
 	}
 	
 	public function decodeBegin(src : Uint8Array, pos0 : Int):Void {
-		trace("decodeBegin pos0="+pos0 + " src.len=" + src.length);
+		Logging.dbg("decodeBegin pos0="+pos0 + " src.len=" + src.length);
 		rans = new Rans(src, pos0);
 		nDec = 0;
 	}
@@ -229,20 +229,14 @@ class EntroCoderANS extends DecReceiver implements EntroCoder {
 	public function decodeClr(cxi:Int):Int {
 		var dcx = cntab[cxi];
 		var c : Int;// = 0;
-		
-		//dbg
-		if (cxi == 3380) { 
-			Logging.MLog("decodeClr(3380): someFreq=" + rans.decGet());
-			dcx.show();
-		}
-		
+				
 		if (dcx.decode(rans.decGet())) {
 			c = dcx.c;
-			if (c > 255) Lib.debug();
+			//if (c > 255) Lib.debug();
 			rans.decAdvance(dcx.cumFreq, dcx.freq);
 		} else {
 			c = rans.raw();
-			if (c > 255) Lib.debug();
+			//if (c > 255) Lib.debug();
 			dcx.update(c);
 		}
 		nDec++;
@@ -309,5 +303,4 @@ class EntroCoderANS extends DecReceiver implements EntroCoder {
 	public function decodeMY():Int {
 		return decodeF(mvtab[1]);
 	}
-	
 }//EntroCoderANS

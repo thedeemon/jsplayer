@@ -13,6 +13,13 @@ class Logging
 		#end
 	}	
 	
+	public static inline function dbg(msg:String, ?pos:haxe.PosInfos)
+	{
+		#if debugging
+		if (on)
+			Log.trace(msg, pos);
+		#end
+	}	
 	public static var extra : Bool = true;
 	
 	static var elog : Array<TimedMsg> = [];
