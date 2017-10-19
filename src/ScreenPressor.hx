@@ -71,6 +71,7 @@ class ScreenPressor implements IVideoCodec
 		switch(version) {
 			case 2: ec = new EntroCoderRC();
 			case 3: ec = new EntroCoderANS();
+			        SC_CXSHIFT = 2; //v3 handles 16bpp pretty much like 24bpp
 			default: trace("unknown version of ScreenPressor!"); return false;
 		}
 		decodingBools = ec.canDecodeBool();
@@ -120,11 +121,7 @@ class ScreenPressor implements IVideoCodec
 		var end = X * Y;
 		var clr = 0; var lasti = di;
 		var maskcx1 = 0xFC00, shiftcx1 = 4, shiftcx = 18;
-		
-		if (bpp == 16) {
-			maskcx1 = 0xFF00; shiftcx1 = 2; shiftcx = 16;
-		} 
-		
+				
 		Logging.MLog("SP.DecompressI src.size=" + src.length + " bpp=" + bpp + " rnd=" + Math.random());
 		Logging.on = false;
 		if (decoder_state == zero_state) {
@@ -200,6 +197,12 @@ class ScreenPressor implements IVideoCodec
 				
 			}
 		} //if zero_state
+		
+		if (bpp == 16 && ec.differentConstantsFor16bbp()) {
+			maskcx1 = 0xFF00; shiftcx1 = 2; shiftcx = 16;
+		} 
+
+		
 		var off = -X  - 1;
 		var ptype = 0;	
 		var last_pos = 0;
@@ -297,7 +300,7 @@ class ScreenPressor implements IVideoCodec
 	
 	public function DecompressP(src:Uint8Array, dst:Int32Array):PFrameResult 
 	{
-		Logging.MLog("SP decompressP sz=" + src.length + " bpp=" + bpp + " dst=prev? " + (dst == prevFrame));
+		Logging.MLog("SP decompressP sz=" + src.length + " bpp=" + bpp);
 			
 		if (src.length == 0 || !decodedI)
 			return { data_pnt: prevFrame, significant_changes : false};
@@ -307,7 +310,7 @@ class ScreenPressor implements IVideoCodec
 			return { data_pnt: prevFrame, significant_changes : false};
 
 		var maskcx1 = 0xFC00, shiftcx1 = 4, shiftcx = 18;
-		if (bpp == 16) {
+		if (ec.differentConstantsFor16bbp() && bpp == 16) {
 			maskcx1 = 0xFF00; shiftcx1 = 2; shiftcx = 16;
 		} 
 		

@@ -20,6 +20,7 @@ interface EntroCoder {
 	function decodeMY():Int;	
 	function canDecodeBool():Bool;
 	function decodeBool():Bool;
+	function differentConstantsFor16bbp():Bool;
 }
 
 class CC { //contexts consts
@@ -67,6 +68,8 @@ class EntroCoderRC implements EntroCoder {
 		mvtab[0] = new Uint32Array(ScreenPressor.msr_x*2 + 1);
 		mvtab[1] = new Uint32Array(ScreenPressor.msr_y*2 + 1);	
 	}
+	
+	public function differentConstantsFor16bbp():Bool { return true; }
 	
 	public function preinit():Void {
 		for (chan in 0...3)
@@ -206,6 +209,7 @@ class EntroCoderANS extends DecReceiver implements EntroCoder {
 	}
 	
 	public function preinit():Void {}
+	public function differentConstantsFor16bbp():Bool { return false; }
 	
 	public function renewI():Void {
 		for (i in 0... CC.CXMAX * 3)

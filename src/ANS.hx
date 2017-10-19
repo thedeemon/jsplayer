@@ -20,7 +20,7 @@ class Rans {
 	}	
 	
 	function reinitImpl(srcdata:Uint8Array, i:Int):Void {
-		trace("Rans.start at "+i);
+		//trace("Rans.start at "+i);
 		data = srcdata;
 		var x = data[i+0];
 		x |= data[i+1] << 8;
