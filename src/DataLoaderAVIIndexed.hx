@@ -501,9 +501,9 @@ class DataLoaderAVIIndexed extends DataLoader
 	{
 		//here frames[num] == null || frames[num].data == null
 		//trace("initiate_loading num=" + num);
-		Logging.MLog("initiate_loading " + num);
+		/*Logging.MLog("initiate_loading " + num);
 		if (callers != null)
-			Logging.MLog(" callers: <br/>&nbsp;" + callers.join("<br/>&nbsp;"));
+			Logging.MLog(" callers: <br/>&nbsp;" + callers.join("<br/>&nbsp;"));*/
 		var me = this;
 		requested_frame_num = num;
 		function action(clr:String): Void->Void { 
@@ -677,7 +677,7 @@ class DataLoaderAVIIndexed extends DataLoader
 	
 	function clear_memory(nk:Int, num:Int):Void //forget previously loaded parts - clear all frames except [nk...num] 
 	{
-		Logging.MLog("DLAI.clear_memory nk=" + nk + " num=" + num);
+		//Logging.MLog("DLAI.clear_memory nk=" + nk + " num=" + num);
 		for (i in 0...nk)			
 			if (frames[i] != null && frames[i].data!=null && frames[i].data.length != 0)			
 				frames[i].data = null;

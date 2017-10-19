@@ -24,10 +24,8 @@ import openfl.geom.Matrix;
 import openfl.geom.Rectangle;
 import openfl.Lib;
 import openfl.utils.ByteArray;
-import openfl.Memory;
 import openfl.display.StageScaleMode;
 import openfl.display.GradientType;
-import openfl.Vector;
 import openfl.Vector;
 import Manager;
 import DataLoader;
@@ -339,7 +337,7 @@ class Main
 			dy = fit(dy, 0, vy * k - height);
 		}
 		
-		Logging.MLog("vx="+vx+" vy="+vy+" k="+k);
+		//Logging.MLog("vx="+vx+" vy="+vy+" k="+k);
 		var mat = new Matrix(1.0 * k, 0, 0, -1.0 * k, -dx, height + dy);
 		bitmap.transform.matrix = mat;
 
@@ -392,7 +390,7 @@ class Main
 	
 	private function redraw_sliders(width:Float, height:Float) : Void
 	{
-		Logging.MLog("redraw_sliders");
+		//Logging.MLog("redraw_sliders");
 		if (zoom_index == 0) {
 			hor_slider.visible = false;
 			ver_slider.visible = false;

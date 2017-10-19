@@ -17,9 +17,7 @@ import openfl.Vector;
 #if msvc
 import MSVideo1;
 #end
-import openfl.Memory;
 import openfl.utils.ByteArray;
-import openfl.utils.Endian;
 import VideoData;
 import js.html.Int32Array;
 import EntroCoders;

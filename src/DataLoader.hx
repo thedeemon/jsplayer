@@ -171,13 +171,13 @@ class DataLoader
 				show = true;							
 		}
 		if (show && n > 0)	{
-			Logging.MLog("DataLoader.on_progress: stream.bytesAvailable=" + n + details);
+			//Logging.MLog("DataLoader.on_progress: stream.bytesAvailable=" + n + details);
 			last_logged_sz = e.bytesLoaded;
 		}
 		#end
 		
 		if (stop_loading) { 
-			Logging.MLog("on_progress: stop_loading is true, returning");
+			//Logging.MLog("on_progress: stop_loading is true, returning");
 			return;
 		}
 		if (n > 0) {

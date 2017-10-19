@@ -225,7 +225,7 @@ class EntroCoderANS extends DecReceiver implements EntroCoder {
 	}
 	
 	public function decodeBegin(src : Uint8Array, pos0 : Int):Void {
-		Logging.dbg("decodeBegin pos0="+pos0 + " src.len=" + src.length);
+		//Logging.dbg("decodeBegin pos0="+pos0 + " src.len=" + src.length);
 		rans = new Rans(src, pos0);
 		nDec = 0;
 	}
