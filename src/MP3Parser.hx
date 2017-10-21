@@ -3,7 +3,6 @@ import openfl.display.Loader;
 import openfl.events.TimerEvent;
 import openfl.utils.ByteArray;
 import openfl.utils.Timer;
-import openfl.Vector;
 import InputBuffer;
 import openfl.media.Sound;
 import openfl.display.LoaderInfo;
@@ -19,11 +18,11 @@ class MP3Parser
 {
 	var input : InputBuffer;
 	var position : UInt;
-	var frames : Vector<Range>;
+	var frames : Array<Range>;
 	var sample_rate : Int;
 	var frames_processed : Int;
 	var section_handler : Float -> Float -> Sound -> Void; //start, duration, sound
-	var long_frames : Vector<Range>;
+	var long_frames : Array<Range>;
 	var long_frames_processed : Int;
 	var no_more_data : Bool;
 	var parsing_complete : Bool;
@@ -42,9 +41,9 @@ class MP3Parser
 		input = buffer;
 		section_handler = sound_handler;
 		position = 0;
-		frames = new Vector<Range>();
+		frames = new Array<Range>();
 		frames_processed = 0;
-		long_frames = new Vector<Range>();
+		long_frames = new Array<Range>();
 		long_frames_processed = 0;
 		no_more_data = false;
 		parsing_complete = false;		
@@ -209,7 +208,7 @@ class MP3Parser
 		
 		if (last_portion) {			
 			frames_processed += frames.length;
-			frames.length = 0;
+			frames = [];// .length = 0;
 		} else {
 			var num_saved = 4;	
 			var last_frames = frames.slice( -num_saved );		
@@ -233,7 +232,7 @@ class MP3Parser
 		long_frames = last_frames;
 	}
 	
-	private function generate_sound(mp3frames : Vector<Range>, start_time : Float):Bool
+	private function generate_sound(mp3frames : Array<Range>, start_time : Float):Bool
 	{
 		if (mp3frames.length < 1) return false;
 		var t0 = haxe.Timer.stamp();

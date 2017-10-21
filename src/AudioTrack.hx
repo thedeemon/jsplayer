@@ -3,7 +3,6 @@ import openfl.media.Sound;
 import openfl.media.SoundChannel;
 import openfl.utils.Timer;
 import openfl.events.TimerEvent;
-import openfl.Vector;
 
 class Fragment {
 	public var start_time(default, null) : Float;
@@ -28,14 +27,14 @@ class Fragment {
 
 class AudioTrack 
 {
-	var sections : Vector<Fragment>;
+	var sections : Array<Fragment>;
 	var next_sec_timer : Timer;
 	var sound_channel : SoundChannel;
 	public var time_loaded(default, null) : Float;
 
 	public function new() 
 	{
-		sections = new Vector<Fragment>();
+		sections = new Array<Fragment>();
 		time_loaded = 0;
 	}
 	
@@ -59,7 +58,7 @@ class AudioTrack
 		tmplist.push(frag);
 		tmplist = tmplist.concat(sections.slice(i)); //tmplist.length == len+1 ,  tmplist.length > 1
 		
-		var newlist = new Vector<Fragment>();
+		var newlist = new Array<Fragment>();
 		var time_covered:Float = 0;
 		if (tmplist[1].start_time - tmplist[0].start_time > 0.001 || tmplist[0].end_time() - tmplist[1].end_time() > 0.001) {
 			newlist.push(tmplist[0]);
@@ -121,7 +120,7 @@ class AudioTrack
 	public function Clear():Void
 	{
 		Stop();
-		sections.length = 0;
+		sections = [];//.length = 0;
 		time_loaded = 0;
 	}
 	

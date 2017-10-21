@@ -1,11 +1,7 @@
 package ;
 import openfl.errors.Error;
-import openfl.Vector;
 import IVideoCodec;
 import openfl.utils.ByteArray;
-import openfl.Memory;
-import openfl.utils.Endian;
-import openfl.Vector;
 import js.html.Int32Array;
 import js.html.Uint8Array;
 
@@ -14,7 +10,7 @@ class MSVideo1_16bit implements IVideoCodec
 	//var prev_frame : Int; //pointer
 	var X : Int;
 	var Y : Int;	
-	var block_changes : Vector<Bool>;
+	var block_changes : Array<Bool>;
 	var insignificant_blocks : Int;
 	var insign_lines : Int;
 	var size_of_just_skips : UInt;
@@ -26,7 +22,8 @@ class MSVideo1_16bit implements IVideoCodec
 		//trace("MSVC.new 16bit w=" + width + " h=" + height);
 		//prev_frame = 0; 
 		X = width; Y = height;		
-		block_changes = new Vector(height >> 2);		
+		block_changes = new Array(/*height >> 2*/);
+		block_changes[(height >> 2) - 1] = false;
 		pal = new Int32Array(8);
 		
 		var nblocks = (X >> 2) * (Y >> 2);

@@ -13,7 +13,6 @@ import DataLoaderAVIIndexed;
 #else
 import DataLoaderAVISeq;
 #end
-import openfl.Vector;
 #if msvc
 import MSVideo1;
 #end

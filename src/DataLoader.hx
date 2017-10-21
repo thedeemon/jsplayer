@@ -5,7 +5,6 @@ import openfl.events.ProgressEvent;
 import openfl.net.URLRequest;
 import openfl.utils.ByteArray;
 import openfl.utils.Endian;
-import openfl.Vector;
 import haxe.Timer;
 import InputBuffer;
 import AudioTrack;
@@ -37,14 +36,14 @@ class DataLoader
 #else
 	var stream : PostStream;
 #end
-	var frames : Vector<CompressedFrame>;
+	var frames : Array<CompressedFrame>;
 	var reader : Void -> ReadStatus;
 	var video_info_cb : VideoInfo -> Void;	
 	var buffer : InputBuffer;
 	var sound_buffer : InputBuffer;
 	var avi_parser : AVIParser;		
 	var mp3_parser : MP3Parser;
-	var indexes : Vector<Index>;
+	var indexes : Array<Index>;
 	var reading_start_position : Int64;	
 	var avi_parsing_pos : Int; //number of next frame to be parsed
 	var nframes : Int;
@@ -57,7 +56,7 @@ class DataLoader
 	
 	public function new() 
 	{
-		frames = new Vector<CompressedFrame>();
+		frames = new Array<CompressedFrame>();
 		buffer = new InputBuffer();
 		sound_buffer = new InputBuffer();
 		audio_track = new AudioTrack();
@@ -146,16 +145,7 @@ class DataLoader
 			n++;
 		return n;				
 	}
-	
-	/*public function GetKeyFrames() : Vector<Int>
-	{
-		var v = new Vector<Int>();
-		for (i in 0...frames.length)
-			if (frames[i].key)
-				v.push(i);
-		return v;
-	}*/
-	
+		
 	function on_progress(e:ProgressEvent):Void
 	{
 		var n = stream.bytesAvailable;
@@ -288,7 +278,7 @@ class DataLoader
 					on_audio_indx(data);
 					return;
 				}
-				indexes = new Vector<Index>();
+				indexes = new Array<Index>();
 				var frame_num = 0;
 				for (sie in sindx) {
 					indexes.push( Index.FromSuper(sie, frame_num) );
@@ -302,7 +292,7 @@ class DataLoader
 					on_audio_indx(data);
 					return;
 				}
-				indexes = new Vector<Index>();
+				indexes = new Array<Index>();
 				var x = new Index();
 				x.base_offset = offset;
 				x.first_frame = 0;
@@ -348,7 +338,7 @@ class DataLoader
 				var off_low = buf.ReadInt(20);
 				var off_hi = buf.ReadInt(24);
 				var base_offset = new Int64(off_low, off_hi);
-				var frames = new Vector<StdIndexEntry>();
+				var frames = new Array<StdIndexEntry>();
 				var last_off:UInt = 0;
 				for (i in 0...nentries) {
 					var off = buf.ReadInt(pos);

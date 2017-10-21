@@ -1,7 +1,6 @@
 package ;
 import Int64;
 import openfl.utils.ByteArray;
-import openfl.Vector;
 import js.html.Uint8Array;
 
 class SuperIndexEntry {
@@ -45,7 +44,7 @@ class Index
 	public var last_frame : Int;
 	public var base_offset : Int64; //add to frames offsets
 	public var idx_offset : Int64;  //where index is
-	public var frames : Vector<StdIndexEntry>;
+	public var frames : Array<StdIndexEntry>;
 	public var size_in_bytes : UInt; //of index
 	
 	public function new()	{}
@@ -62,8 +61,8 @@ class Index
 }
 
 enum Indx_data {
-	super_index(index : Vector<SuperIndexEntry>, ckid : UInt);
-	std_index(index : Vector<StdIndexEntry>, ckid : UInt, offset : Int64);
+	super_index(index : Array<SuperIndexEntry>, ckid : UInt);
+	std_index(index : Array<StdIndexEntry>, ckid : UInt, offset : Int64);
 }
 
 typedef CompressedFrame = {

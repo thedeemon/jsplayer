@@ -7,7 +7,6 @@ import openfl.events.HTTPStatusEvent;
 import openfl.utils.ByteArray;
 import openfl.utils.Endian;
 import openfl.net.URLRequest;
-import openfl.Vector;
 import haxe.Timer;
 #if tcp
 import HTTPClient;
@@ -50,7 +49,7 @@ class DataLoaderAVIIndexed extends DataLoader
 	public static var storage_limit : Int = 50000000;
 	static var zero64 : Int64 = new Int64(0, 0);
 	
-	var audio_indexes : Vector<Index>;
+	var audio_indexes : Array<Index>;
 	
 	public function new() 
 	{
@@ -122,7 +121,7 @@ class DataLoaderAVIIndexed extends DataLoader
 					//trace("not audio stream"); 					
 					return;
 				}
-				audio_indexes = new Vector<Index>();
+				audio_indexes = new Array<Index>();
 				var frame_num = 0;
 				for (sie in sindx) {
 					audio_indexes.push( Index.FromSuper(sie, frame_num) );
@@ -134,7 +133,7 @@ class DataLoaderAVIIndexed extends DataLoader
 					//trace("not audio stream"); 					
 					return;
 				}
-				audio_indexes = new Vector<Index>();
+				audio_indexes = new Array<Index>();
 				var x = new Index();
 				x.base_offset = offset;
 				x.first_frame = 0;
@@ -303,11 +302,11 @@ class DataLoaderAVIIndexed extends DataLoader
 					var num_recs = cksize >> 4;
 					var x = new Index();
 					x.first_frame = 0;					
-					x.frames = new Vector<StdIndexEntry>();
+					x.frames = new Array<StdIndexEntry>();
 					
 					var ax = new Index(); //audio index
 					ax.first_frame = 0;
-					ax.frames = new Vector<StdIndexEntry>();
+					ax.frames = new Array<StdIndexEntry>();
 					
 					var first_offset = -1;
 					for (i in 0...num_recs) {
@@ -338,10 +337,10 @@ class DataLoaderAVIIndexed extends DataLoader
 
 					adjust_index_details(x, base_offset);
 					adjust_index_details(ax, base_offset);
-					indexes = new Vector<Index>();
+					indexes = new Array<Index>();
 					indexes.push(x);
 					if (ax.frames.length > 0) {
-						audio_indexes = new Vector<Index>();
+						audio_indexes = new Array<Index>();
 						audio_indexes.push(ax);
 					}
 					//trace("idx1 loaded, updating info");

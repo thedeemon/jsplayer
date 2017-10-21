@@ -1,25 +1,24 @@
 package ;
 
 import openfl.utils.ByteArray;
-import openfl.Vector;
 
 class InputBuffer 
 {
-	var chunks : Vector<ByteArray>;
+	var chunks : Array<ByteArray>;
 	var total_size : UInt;
 	var local_pos : UInt;
 	var cur_chunk : UInt;
 	var cur_chunk_start : UInt;
 	var cur_chunk_end : UInt;
-	var starts : Vector<UInt>;
+	var starts : Array<UInt>;
 	var first_present_chunk : UInt;
 	
 	public function new() 
 	{
-		chunks = new Vector<ByteArray>();
+		chunks = new Array<ByteArray>();
 		total_size = 0;
 		cur_chunk = 0; cur_chunk_start = 0; cur_chunk_end = 0;
-		starts = new Vector<UInt>();
+		starts = new Array<UInt>();
 		first_present_chunk = 0;
 	}
 	
@@ -37,8 +36,8 @@ class InputBuffer
 	
 	public function Clear():Void
 	{
-		starts.length = 0;
-		chunks.length = 0;
+		starts = [];//.length = 0;
+		chunks = [];// .length = 0;
 		total_size = 0;
 		first_present_chunk = 0;
 	}

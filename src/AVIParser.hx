@@ -6,7 +6,6 @@ import DataLoader;
 import openfl.utils.Endian;
 import Int64;
 import VideoData;
-import openfl.Vector;
 
 using ParserUtils;
 
@@ -102,7 +101,7 @@ class AVIParser extends ParserUser
 		if (longs_per_entry == 4) {
 			data.position += 12;
 			//trace("superindex");
-			var index : Vector<SuperIndexEntry> = new Vector<SuperIndexEntry>();
+			var index : Array<SuperIndexEntry> = new Array<SuperIndexEntry>();
 			for (i in 0...entries_used)
 				index.push(new SuperIndexEntry(data));
 			indx_data_cb( super_index(index, ckid) );
@@ -111,7 +110,7 @@ class AVIParser extends ParserUser
 			//trace("std index");
 			var offset = Int64.Read(data);
 			data.position += 4;
-			var index : Vector<StdIndexEntry> = new Vector<StdIndexEntry>();
+			var index : Array<StdIndexEntry> = new Array<StdIndexEntry>();
 			for (i in 0...entries_used)
 				index.push(new StdIndexEntry(data));
 			indx_data_cb( std_index(index, ckid, offset) );
