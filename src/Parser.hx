@@ -336,13 +336,7 @@ class OnceParser extends Parser
 		start_pos = pos;
 		p.parse(pos);
 	}
-	
-	override private function on_success(pos:UInt):Void 
-	{
-		Parser.input.DontNeedUpTo(start_pos);
-		super.on_success(pos);
-	}
-	
+		
 	override public function clone():Parser 
 	{
 		return new OnceParser(p.clone());

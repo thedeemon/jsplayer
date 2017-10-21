@@ -127,17 +127,4 @@ class InputBuffer
 		chunks.pop();	
 		starts.pop();
 	}
-	
-	public function DontNeedUpTo(position : UInt):Void //data before position will not be needed anymore
-	{
-		return;
-		var k = 0;
-		if (position >= cur_chunk_start && position < cur_chunk_end) 
-			k = cur_chunk;
-		else
-			k = FindChunk(position);
-		for (i in 0...k)
-			chunks[i] = null;
-		first_present_chunk = k;
-	}
 }
