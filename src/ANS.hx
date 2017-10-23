@@ -102,7 +102,7 @@ class FixedSizeRansCtx extends CxBase {
 		}
 	}
 
-	override public function decode(someFreq:Int, rcv:DecReceiver):Bool { // => always true
+	public function decode(someFreq:Int, rcv:DecReceiver):Bool { // => always true
 		//public function de(someFreq:Int, interval:Freq):Int {
 		//assert(someFreq >= 0);
 		//assert(someFreq < PROB_SCALE);
@@ -146,19 +146,14 @@ class FixedSizeRansCtx extends CxBase {
 
 enum FindRes { Found; Added; NoRoom; }
 
-class DecReceiver {
-	public var c : Int; //decoded
-	public var freq : Int;
-	public var cumFreq : Int;	
-	
-	public function new() {}
+typedef DecReceiver = {
+	var c : Int; //decoded
+	var freq : Int;
+	var cumFreq : Int;
 }
 
 class CxBase {
 	public var kind : Int;
-	public function decode(someFreq:Int, rcv : DecReceiver):Bool { trace("Unimpl"); return false;  }
-	//public function upgrade(c:Int) : CxU { trace("Unimpl"); return null; }
-	public function show() { /*Main.print("Cx kind="+kind);*/  }
 }
 
 class SymbList extends CxBase {
@@ -179,8 +174,8 @@ class SymbList extends CxBase {
 		return NoRoom;		
 	}
 	
-	override public function show() {
-		super.show();
+	public function show() {
+		//super.show();
 		//Main.print("SymbList: d=" + d + " " + symb);
 	}
 }
@@ -326,7 +321,7 @@ class Cx4 extends SmallContext {
 		create(c1, c);
 	}
 	
-	public override function decode(someFreq:Int, rcv : DecReceiver):Bool { 
+	public function decode(someFreq:Int, rcv : DecReceiver):Bool { 
 		var totFr = freqs[0] + freqs[1] + freqs[2] + freqs[3] + 256 - d;
 		return decodeSC(someFreq, rcv, totFr);
 	}
@@ -387,7 +382,7 @@ class Cx5 extends SmallContext {
 		cntsum = totFr;		
 	}
 	
-	public override function decode(someFreq:Int, rcv : DecReceiver):Bool { 
+	public function decode(someFreq:Int, rcv : DecReceiver):Bool { 
 		var res = decodeSC(someFreq, rcv, cntsum);
 		cntsum = SmallContext.totFr;
 		return res;
@@ -564,7 +559,7 @@ class Cx6 extends CxBase {
 		}
 	}
 	
-	override public function show() {
+	public function show() {
 		var S = symbols.length;
 		Logging.MLog("Cx6 k=" + kind + " d=" + d + " S=" + S + " fshift=" + fshift);
 		for(i in 0...S) 
@@ -613,7 +608,7 @@ class Cx6 extends CxBase {
 		cnts[symbols.length] = cntsum;
 	}
 	
-	override public function decode(someFreq:Int, rcv:DecReceiver):Bool 
+	public function decode(someFreq:Int, rcv:DecReceiver):Bool 
 	{
 		var lfreq = 0, lcumFreq =  0, lowerSym = 0;
 		for(i in 0...d) {
@@ -792,10 +787,11 @@ enum CxU {
 	Kind7(c7:Cx7);	
 }
 
-class Context extends DecReceiver { 
+class Context { 
 	var u : CxU;
+	public static var rcv : DecReceiver;
 
-	public function new() { super(); u = KindNone;  }
+	public function new() { u = KindNone; rcv = { c:0, freq:0, cumFreq:0 }; }
 	
 	public function show() { /*if (u != null) u.show(); else trace("Context.show: kind = 0");*/ }
 	
@@ -805,10 +801,10 @@ class Context extends DecReceiver {
 		//each call site has different type of x
 		//monomorphic call - good for JS engine!
 		switch(u) { //ideally should be ordered in decreasing probability order
-			case Kind6(x) : if (!x.decode(someFreq, this)) u = x.upgrade(c); 
-			case Kind7(x) : x.decode(someFreq, this); //aways true
-			case Kind4(x) : if (!x.decode(someFreq, this)) u = x.upgrade(c); 
-			case Kind5(x) : if (!x.decode(someFreq, this)) u = x.upgrade(c); 
+			case Kind6(x) : if (!x.decode(someFreq, rcv)) u = x.upgrade(rcv.c); 
+			case Kind7(x) : x.decode(someFreq, rcv); //aways true
+			case Kind4(x) : if (!x.decode(someFreq, rcv)) u = x.upgrade(rcv.c); 
+			case Kind5(x) : if (!x.decode(someFreq, rcv)) u = x.upgrade(rcv.c); 
 			case Kind1(_) | Kind2(_) | Kind3(_) | KindNone: return false;
 		}		
 		/*if (u == null || u.kind < 4) return false;

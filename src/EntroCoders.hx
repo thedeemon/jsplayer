@@ -179,7 +179,7 @@ class EntroCoderRC implements EntroCoder {
 	public function decodeBool():Bool { return false;  }
 }//EntroCoderRC
 
-class EntroCoderANS extends DecReceiver implements EntroCoder {
+class EntroCoderANS implements EntroCoder {
 	var rans : Rans;
 	var nDec : Int;
 	var cntab : Array<Context>; 
@@ -190,9 +190,10 @@ class EntroCoderANS extends DecReceiver implements EntroCoder {
 	var bttab : FixedSizeRansCtx; //(5)
 	var sxytab : Array<FixedSizeRansCtx>; // [4]  (16)
 	var mvtab : Array<FixedSizeRansCtx>; // [2] (512)
+	var myRcv : DecReceiver;
 	
 	public function new() {
-		super();
+		myRcv = {c:0, freq:0, cumFreq:0};
 		cntab = new Array<Context>();
 		for (i in 0 ... CC.CXMAX * 3) cntab[i] = new Context();
 		ntab = new Array<FixedSizeRansCtx>();
@@ -232,12 +233,13 @@ class EntroCoderANS extends DecReceiver implements EntroCoder {
 	
 	public function decodeClr(cxi:Int):Int {
 		var dcx = cntab[cxi];
-		var c : Int;// = 0;
+		var c : Int;
+		var rcv = Context.rcv;
 				
 		if (dcx.decode(rans.decGet())) {
-			c = dcx.c;
+			c = rcv.c;
 			//if (c > 255) Lib.debug();
-			rans.decAdvance(dcx.cumFreq, dcx.freq);
+			rans.decAdvance(rcv.cumFreq, rcv.freq);
 		} else {
 			c = rans.raw();
 			//if (c > 255) Lib.debug();
@@ -266,14 +268,14 @@ class EntroCoderANS extends DecReceiver implements EntroCoder {
 	}	
 	
 	function decodeF(dcx:FixedSizeRansCtx):Int {
-		dcx.decode( rans.decGet(), this);
-		rans.decAdvance(cumFreq, freq);
+		dcx.decode( rans.decGet(), myRcv);
+		rans.decAdvance(myRcv.cumFreq, myRcv.freq);
 		nDec++;
 		if (nDec == Rans.B) {
 			rans.reinit();
 			nDec = 0;
 		}
-		return c;
+		return myRcv.c;
 	}
 	
 	public function decodeN(ptype:Int):Int {
