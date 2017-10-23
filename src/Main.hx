@@ -66,6 +66,8 @@ class Main
 	var zoom_factors : Array<Float>;
 	var scrolling : ScrollingState;
 	
+	var tseek0 : Float; // for speed measuring
+	
 	var ctrl_alpha : Int; //0..100
 	var ctrl_alpha_target : Int;
 	
@@ -166,6 +168,7 @@ class Main
 		bar_rect = new Rectangle(15, 700, 600, 8);
 		zoom_names = [ "Fit", "100%", "200%" ];
 		zoom_factors = [0, 1, 2];
+		tseek0 = -1;
 	}
 	
 	function StopAndClean():Void
@@ -1231,12 +1234,18 @@ class Main
 	{
 		//js.Lib.debug();
 		skipping_stills = false;
+		tseek0 = Browser.window.performance.now();
 		man.audio_track.Stop();
 		seeking = man.SeekTo(time, seek_done, bitmap_data);
 	}
 	
 	function seek_done():Void
 	{
+		if (tseek0 > 0) {
+			var t = Browser.window.performance.now();
+			Logging.MLog("seek done in t=" + (t - tseek0));
+			tseek0 = -1;
+		}
 		DataLoader.ELog("seek_done");
 		seeking = false;
 		start_time = haxe.Timer.stamp();
