@@ -51,7 +51,7 @@ class Rans {
 //Interval for symbol encoding by an entropy coder. [cumFreq, cumFreq + freq)
 typedef Freq = { freq : Int, cumFreq : Int } //to pass byte without compressing: freq=0, cumFreq=c
 
-class FixedSizeRansCtx extends CxU {
+class FixedSizeRansCtx extends CxBase {
 	static inline var STEP_FX = 16;	
 	static inline var step = STEP_FX; 
 	static inline var Dshift = 7; 
@@ -101,9 +101,8 @@ class FixedSizeRansCtx extends CxU {
 			}
 		}
 	}
-	
 
-	override public function decode(someFreq:Int, rcv:DecReceiver):Bool {
+	override public function decode(someFreq:Int, rcv:DecReceiver):Bool { // => always true
 		//public function de(someFreq:Int, interval:Freq):Int {
 		//assert(someFreq >= 0);
 		//assert(someFreq < PROB_SCALE);
@@ -155,14 +154,14 @@ class DecReceiver {
 	public function new() {}
 }
 
-class CxU {
+class CxBase {
 	public var kind : Int;
 	public function decode(someFreq:Int, rcv : DecReceiver):Bool { trace("Unimpl"); return false;  }
-	public function upgrade(c:Int) : CxU { trace("Unimpl"); return null; }
+	//public function upgrade(c:Int) : CxU { trace("Unimpl"); return null; }
 	public function show() { /*Main.print("Cx kind="+kind);*/  }
 }
 
-class SymbList extends CxU {
+class SymbList extends CxBase {
 	public var symb : Uint8Array;
 	public var d : Int;
 	
@@ -216,7 +215,7 @@ class Cx3 extends SymbList {
 	}
 }
 
-class SmallContext extends CxU {
+class SmallContext extends CxBase {
 	public var	d : Int;
 	var maxpos : Int; //maxpos is position of symbol with max freq value
 	var S : Int; // size: 4 or 16
@@ -332,8 +331,8 @@ class Cx4 extends SmallContext {
 		return decodeSC(someFreq, rcv, totFr);
 	}
 	
-	public override function upgrade(c:Int) : CxU { 
-		return Cx5.fromCx4(this, c);		
+	public function upgrade(c:Int) : CxU { 
+		return Kind5( Cx5.fromCx4(this, c) );	
 	}
 }
 
@@ -394,15 +393,15 @@ class Cx5 extends SmallContext {
 		return res;
 	}
 	
-	override public function upgrade(c:Int):CxU 
+	public function upgrade(c:Int):CxU
 	{
 		var cx = new Cx6();
 		cx.createFrom5(this, c);
-		return cx;
+		return Kind6(cx);
 	}
 }
 
-class Cx6 extends CxU {	
+class Cx6 extends CxBase {	
 	public var symbols : Uint8Array;
 	public var freqs : Uint16Array;
 	public var cnts : Uint16Array;
@@ -706,11 +705,11 @@ class Cx6 extends CxU {
 		if (cnts[S] + step > Rans.PROB_SCALE) rescaleDec();
 	}
 	
-	override public function upgrade(c:Int):CxU 
+	public function upgrade(c:Int):CxU 
 	{
 		var cx = new Cx7();
 		cx.createFrom6(this, c);
-		return cx;
+		return Kind7(cx);
 	}
 }// Cx6
 
@@ -782,72 +781,87 @@ class Cx7 extends FixedSizeRansCtx {
 	}
 }
 
+enum CxU {
+	KindNone;	
+	Kind1(c1:Cx1);
+	Kind2(c2:Cx2);
+	Kind3(c3:Cx3);
+	Kind4(c4:Cx4);
+	Kind5(c5:Cx5);
+	Kind6(c6:Cx6);
+	Kind7(c7:Cx7);	
+}
+
 class Context extends DecReceiver { 
 	var u : CxU;
 
-	//public function new() { u.c1.kind = 0; }
-	//int kind() const { return u.c1.kind; }
-	//public function encode(BYTE c, Freq &interval):Bool {// also updates stats, false means Skip, write raw byte
-	//}
-	public function new() { super(); u = null;  }
+	public function new() { super(); u = KindNone;  }
 	
-	public function show() { if (u != null) u.show(); else trace("Context.show: kind = 0"); }
+	public function show() { /*if (u != null) u.show(); else trace("Context.show: kind = 0");*/ }
 	
-	public function renew() { u = null; }
+	public function renew() { u = KindNone; }
 	
     public function decode(someFreq:Int):Bool {  // updates stats, if true sets c and interval (freq, cumFreq)
-		if (u == null || u.kind < 4) return false;
+		//each call site has different type of x
+		//monomorphic call - good for JS engine!
+		switch(u) { //ideally should be ordered in decreasing probability order
+			case Kind6(x) : if (!x.decode(someFreq, this)) u = x.upgrade(c); 
+			case Kind7(x) : x.decode(someFreq, this); //aways true
+			case Kind4(x) : if (!x.decode(someFreq, this)) u = x.upgrade(c); 
+			case Kind5(x) : if (!x.decode(someFreq, this)) u = x.upgrade(c); 
+			case Kind1(_) | Kind2(_) | Kind3(_) | KindNone: return false;
+		}		
+		/*if (u == null || u.kind < 4) return false;
 		if (!u.decode(someFreq, this)) {
 			u = u.upgrade(c);
-		}
+		}*/
 		return true;
 	}
 	
 	public function update(c:Int):Void {
-		if (u == null) { u = new Cx1(c); }
+		switch(u) {
+			case KindNone: u = Kind1( new Cx1(c) );
+			case Kind1(x): updateC1(c, x);
+			case Kind2(x): updateC2(c, x);
+			case Kind3(x): updateC3(c, x);
+			case Kind4(_) | Kind5(_) | Kind6(_) | Kind7(_): trace("unexpected kind in Context.update");
+		}
+		
+		/*if (u == null) { u = new Cx1(c); }
 		else {
 			switch(u.kind) {
 				case 1: updateC1(c); 
 				case 2: updateC2(c); 
 				case 3: updateC3(c); 
 			}
-		}
+		}*/
 	}
 		
-	function updateC1(c:Int):Void {
-		var c1 : Cx1 = cast u;		
+	function updateC1(c:Int, c1:Cx1):Void {
 		switch(c1.findOrAdd(c)) {
 			case Found:
-				if (c1.d <= 4) u = new Cx4(c1, c); 
-				else u = Cx5.fromCx1(c1, c);
+				if (c1.d <= 4) u = Kind4( new Cx4(c1, c) );
+				else u = Kind5( Cx5.fromCx1(c1, c) );
 			case Added: 
-			case NoRoom:// u = upgrade<Cx1, Cx2>(c1, c); 
-				//Main.print("updateC1 c="+c+" no room, making Cx2");
-				u = new Cx2(c1, c); /*old.free();*/ 
+			case NoRoom: u = Kind2( new Cx2(c1, c) );
 		}		
 	}
 	
-	function updateC2(c:Int):Void {
-		var c2 : Cx2 = cast u;
-		//Main.print("updateC2 "+c);
+	function updateC2(c:Int, c2:Cx2):Void {
 		switch(c2.findOrAdd(c)) {
 			case Found:	
-				//Main.print(" found");
 				var cx = new Cx6();
 				cx.createFrom2(c2, c);
-				u = cx;
-			case Added: //Main.print(" added");
-			case NoRoom: //u.c3 = upgrade<Cx2, Cx3>(u.c2, c); break;
-			    //Main.print(" no room");
-				u = new Cx3(c2, c);
+				u = Kind6( cx );
+			case Added: 
+			case NoRoom: u = Kind3( new Cx3(c2, c) );
 		}		
 	}
 	
-	function updateC3(c:Int):Void {
-		var c3 : Cx3 = cast u;
+	function updateC3(c:Int, c3:Cx3):Void {
 		switch(c3.findOrAdd(c)) {
 			case Found:	//u.c7 = upgradeTo7<Cx3>(u.c3, c, decoding); break;
-				var cx = new Cx7(); cx.createFrom3(c3, c); u = cx;
+				var cx = new Cx7(); cx.createFrom3(c3, c); u = Kind7(cx);
 			case Added: 
 			case NoRoom: trace("c3.findOrAdd returned NoRoom"); //must not happen
 		}		
