@@ -303,7 +303,7 @@ class ScreenPressor implements IVideoCodec
 	public function DecompressP(src:Uint8Array, dst:Int32Array):PFrameResult 
 	{
 		Logging.MLog("SP decompressP sz=" + src.length + " bpp=" + bpp);
-		var t0 = Browser.window.performance.now();
+		//var t0 = Browser.window.performance.now();
 
 		if (src.length == 0 || !decodedI)
 			return { data_pnt: prevFrame, significant_changes : false};
@@ -474,8 +474,8 @@ class ScreenPressor implements IVideoCodec
 				}
 			}//bx			
 		//Logging.dbg("DecP main loop end");
-		var t1 = Browser.window.performance.now();
-		Logging.MLog(" DecompressP time = " + (t1 - t0));
+		//var t1 = Browser.window.performance.now();
+		//Logging.MLog(" DecompressP time = " + (t1 - t0));
 		
 		//prev_frame = buffer_address; //?
 		prevFrame = dst;
