@@ -51,7 +51,7 @@ class Rans {
 //Interval for symbol encoding by an entropy coder. [cumFreq, cumFreq + freq)
 typedef Freq = { freq : Int, cumFreq : Int } //to pass byte without compressing: freq=0, cumFreq=c
 
-class FixedSizeRansCtx extends CxBase {
+class FixedSizeRansCtx {
 	static inline var STEP_FX = 16;	
 	static inline var step = STEP_FX; 
 	static inline var Dshift = 7; 
@@ -152,11 +152,7 @@ typedef DecReceiver = {
 	var cumFreq : Int;
 }
 
-class CxBase {
-	public var kind : Int;
-}
-
-class SymbList extends CxBase {
+class SymbList {
 	public var symb : Uint8Array;
 	public var d : Int;
 	
@@ -183,7 +179,8 @@ class SymbList extends CxBase {
 class Cx1 extends SymbList {
 	public function new(c:Int) {
 		super(14); 
-		kind = 1; d = 1; 
+		//kind = 1; 
+		d = 1; 
 		symb[0] = c;
 	}
 }
@@ -191,7 +188,7 @@ class Cx1 extends SymbList {
 class Cx2 extends SymbList {
 	public function new(c1 : Cx1, c:Int) {
 		super(64);
-		kind = 2;
+		//kind = 2;
 		for (i in 0...c1.d)
 			symb[i] = c1.symb[i];
 		symb[c1.d] = c;
@@ -202,7 +199,7 @@ class Cx2 extends SymbList {
 class Cx3 extends SymbList {
 	public function new(c2 : Cx2, c:Int) {
 		super(256);
-		kind = 3;
+		//kind = 3;
 		for (i in 0...c2.d)
 			symb[i] = c2.symb[i];
 		symb[c2.d] = c;
@@ -210,7 +207,7 @@ class Cx3 extends SymbList {
 	}
 }
 
-class SmallContext extends CxBase {
+class SmallContext {
 	public var	d : Int;
 	var maxpos : Int; //maxpos is position of symbol with max freq value
 	var S : Int; // size: 4 or 16
@@ -317,7 +314,7 @@ class SmallContext extends CxBase {
 class Cx4 extends SmallContext {
 	public function new(c1 : Cx1, c : Int) {
 		super(4);
-		kind = 4;
+		//kind = 4;
 		create(c1, c);
 	}
 	
@@ -336,7 +333,7 @@ class Cx5 extends SmallContext {
 	
 	public function new() {
 		super(16);
-		kind = 5;
+		//kind = 5;
 	}
 	
 	public static function fromCx1(c1 : Cx1, c : Int):Cx5 {
@@ -396,7 +393,7 @@ class Cx5 extends SmallContext {
 	}
 }
 
-class Cx6 extends CxBase {	
+class Cx6  {	
 	public var symbols : Uint8Array;
 	public var freqs : Uint16Array;
 	public var cnts : Uint16Array;
@@ -413,7 +410,7 @@ class Cx6 extends CxBase {
 	static inline var Step = 25;
 	static inline var f0 = 64;
 	
-	public function new() { kind = 6; }
+	public function new() { /*kind = 6;*/ }
 	
 	inline function setFreq(i:Int, fr:Int, cf:Int) {
 		freqs[i * 2] = fr; freqs[i * 2 + 1] = cf;
@@ -561,7 +558,7 @@ class Cx6 extends CxBase {
 	
 	public function show() {
 		var S = symbols.length;
-		Logging.MLog("Cx6 k=" + kind + " d=" + d + " S=" + S + " fshift=" + fshift);
+		Logging.MLog("Cx6 " + " d=" + d + " S=" + S + " fshift=" + fshift);
 		for(i in 0...S) 
 			if (cnts[i] > 0) {
 				var c = symbols[i];
@@ -710,7 +707,7 @@ class Cx6 extends CxBase {
 
 class Cx7 extends FixedSizeRansCtx {
 	public function new() {
-		super(256); kind = 7;
+		super(256); //kind = 7;
 	}
 	
 	public function createFrom3(c3:Cx3, c:Int) {
