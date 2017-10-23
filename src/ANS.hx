@@ -638,15 +638,15 @@ class Cx6 extends CxU {
 			var x = (someFreq - cumFr) >> fshift; //x = c - lowerSym - 1
 			c = x + lowerSym + 1;
 			fr_cumFreq = lcumFreq + lfreq + (x << fshift);
-			if (c > 255) { 
+			/*if (c > 255) { 
 				trace("Cx6.decode(" + someFreq + ") lfreq=" + lfreq + " lcumFreq=" + lcumFreq + " fshift=" + fshift
 				 + " x=" + x + " lowerSym="+lowerSym +" fr_cumFreq="+fr_cumFreq + " c="+c);
 				js.Lib.debug();
-			}
+			}*/
 		} else { // c < all known
 			c = someFreq >> fshift;
 			fr_cumFreq = c << fshift;
-			if (c > 255) js.Lib.debug();
+			//if (c > 255) js.Lib.debug();
 		}
 		//interval = fr;
 		rcv.freq = fr_freq; rcv.cumFreq = fr_cumFreq; rcv.c = c;
