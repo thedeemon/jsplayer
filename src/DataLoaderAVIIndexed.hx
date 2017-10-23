@@ -177,9 +177,9 @@ class DataLoaderAVIIndexed extends DataLoader
 			while (frames[avi_parsing_pos] != null && frames[avi_parsing_pos].data != null && frames[avi_parsing_pos].data.length == 0) {
 				//don't forget the callback
 				if (avi_parsing_pos == requested_frame_num && requested_frame_action != null) {
-					DataLoader.ELog("add_frame calling requested_frame_action");
+					//DataLoader.ELog("add_frame calling requested_frame_action");
 					requested_frame_action();
-					DataLoader.ELog("add_frame setting requested_frame_action = null");
+					//DataLoader.ELog("add_frame setting requested_frame_action = null");
 					requested_frame_action = null;
 				}				
 				avi_parsing_pos++;
@@ -194,9 +194,9 @@ class DataLoaderAVIIndexed extends DataLoader
 			frames[avi_parsing_pos] = { key : keyfr, data : u8a, ix: -1, significant_changes : null };
 		}
 		if (avi_parsing_pos == requested_frame_num && requested_frame_action != null) {
-			DataLoader.ELog("add_frame calling requested_frame_action");
+			//DataLoader.ELog("add_frame calling requested_frame_action");
 			requested_frame_action();
-			DataLoader.ELog("add_frame setting requested_frame_action=null");
+			//DataLoader.ELog("add_frame setting requested_frame_action=null");
 			requested_frame_action = null;
 		}
 		sum_size_loaded += arr.length;

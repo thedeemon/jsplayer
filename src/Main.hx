@@ -1246,7 +1246,7 @@ class Main
 			Logging.MLog("seek done in t=" + (t - tseek0));
 			tseek0 = -1;
 		}
-		DataLoader.ELog("seek_done");
+		//DataLoader.ELog("seek_done");
 		seeking = false;
 		start_time = haxe.Timer.stamp();
 		start_pos = man.shown_time;		

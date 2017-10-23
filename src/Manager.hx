@@ -248,7 +248,7 @@ class Manager
 				return soon;
 			case frame_loading:
 				loading_pause = true;
-				DataLoader.ELog("GetDecompressedFrame: loader.SetOnLoadOperComplete(repeat this)");
+				//DataLoader.ELog("GetDecompressedFrame: loader.SetOnLoadOperComplete(repeat this)");
 				loader.SetOnLoadOperComplete(function():Void { me.GetDecompressedFrame(time, bitmap_data, playing); me.loading_pause = false; } );
 				delayed_fill = function(nb:Int, t:Float):Void { me.shown_time = t; me.fill_bitmap_data(nb, bitmap_data);  };
 				return playing ? notsoon : soon; //if got here during playing, pause
@@ -261,15 +261,15 @@ class Manager
 		#if logging
 		var st = loader.LoadedFramesStart();
 		var en = loader.LoadedFramesEnd();
-		DataLoader.ELog("SeekTo " + t + " loaded " + st + "..." + en);
+		//DataLoader.ELog("SeekTo " + t + " loaded " + st + "..." + en);
 		#end
 		switch(GetDecompressedFrame(t, bitmap_data, false)) {
 			case decompressed(_), notsoon: 				
-				DataLoader.ELog("SeekTo: decompressed or notsoon, calling seek_done");
+				//DataLoader.ELog("SeekTo: decompressed or notsoon, calling seek_done");
 				seek_done(); 			
 				return false;
 			case soon: 				
-				DataLoader.ELog("SeekTo: soon, setting seek_cb to seek_done");
+				//DataLoader.ELog("SeekTo: soon, setting seek_cb to seek_done");
 				seek_cb = seek_done;
 				return true;
 		}
@@ -287,7 +287,7 @@ class Manager
 	{			
 		if (first_call) frame_of_interest++;
 		#if logging
-		var t0 = DataLoader.ELog("SkipStills enter frame_of_interest=" + frame_of_interest);
+		var t0 = haxe.Timer.stamp(); //DataLoader.ELog("SkipStills enter frame_of_interest=" + frame_of_interest);
 		#else
 		var t0 = haxe.Timer.stamp();
 		#end
@@ -295,17 +295,17 @@ class Manager
 			switch(loader.FindPossibleChange(frame_of_interest)) {
 				case change(pos):
 					frame_of_interest = pos;
-					DataLoader.ELog("return known change at foi=" + frame_of_interest, t0);
+					//DataLoader.ELog("return known change at foi=" + frame_of_interest, t0);
 					return frame_of_interest / fps;
 				case unknown(pos):
 					frame_of_interest = pos;			
-					DataLoader.ELog("unknown at foi=" + frame_of_interest, t0);
+					//DataLoader.ELog("unknown at foi=" + frame_of_interest, t0);
 					while (next_frame_to_decode <= frame_of_interest) {
 						for(n in 0...10) 
 							worker(null);
 						var t1 = haxe.Timer.stamp();
 						if (t1 - t0 > THINK_LIMIT) {
-							DataLoader.ELog("think time limit exhausted", t0);
+							//DataLoader.ELog("think time limit exhausted", t0);
 							return null;
 						}
 					}				
@@ -354,7 +354,7 @@ class Manager
 	
 	function frames_differ_significantly(pnt1 : Int32Array, pnt2 : Int32Array, curfrm : CompressedFrame):Bool
 	{
-		var t0 = DataLoader.ELog("frames_differ_significantly nf2dec=" + next_frame_to_decode);
+		//var t0 = DataLoader.ELog("frames_differ_significantly nf2dec=" + next_frame_to_decode);
 		if (next_frame_to_decode > 0) {
 			switch(loader.GetFrameNotLoading(next_frame_to_decode-1)) {
 				case frame_ready(frm):
@@ -375,11 +375,11 @@ class Manager
 		var X = Std.int(rect.width), Y = Std.int(rect.height);
 		for (i in INSIGNIFICANT_LINES * X ... X*Y) {
 			if (pnt1[i] != pnt2[i]) {
-				DataLoader.ELog("compared for changes, found some", t0);
+				//DataLoader.ELog("compared for changes, found some", t0);
 				return true;			
 			}
 		}
-		DataLoader.ELog("compared for changes, false", t0);
+		//DataLoader.ELog("compared for changes, false", t0);
 		return false;
 	}
 	
@@ -416,17 +416,17 @@ class Manager
 	
 	function worker(e:TimerEvent):Void
 	{
-		var t_entry = DataLoader.ELog("worker enters, nnf2de=" + next_frame_to_decode + " foi=" + frame_of_interest);
+		//var t_entry = DataLoader.ELog("worker enters, nnf2de=" + next_frame_to_decode + " foi=" + frame_of_interest);
 		//try {		
 		if (decoder.State() == in_progress) {
 			var state = decoder.ContinueI();
 			handle_decode_status(state);
-			DataLoader.ELog("worked on decoding I", t_entry);
+			//DataLoader.ELog("worked on decoding I", t_entry);
 			return;
 		}
 		
 		if (loading_pause) {
-			DataLoader.ELog("loading_pause, returning", t_entry);
+			//DataLoader.ELog("loading_pause, returning", t_entry);
 			return;
 		}
 		
@@ -439,7 +439,7 @@ class Manager
 		var free_buf_idx = get_free_buffer(prev_frame_buf_idx);
 		if (free_buf_idx < 0) {
 			loader.ParseSound();
-			DataLoader.ELog("no free bufs, exit", t_entry);
+			//DataLoader.ELog("no free bufs, exit", t_entry);
 			return; //no free bufs to decode to
 		}
 		
@@ -451,7 +451,7 @@ class Manager
 		//trace("worker: GetFrame(" + next_frame_to_decode + "): " + frm_inf_s(frame_info));
 		switch(frame_info) {
 			case frame_notready:
-				DataLoader.ELog("worker: frame_notready, ret", t_entry);
+				//DataLoader.ELog("worker: frame_notready, ret", t_entry);
 				return; //wait for data to arrive
 			case frame_ready(frm):
 				//trace("loaded frame " + next_frame_to_decode + ", free_buf_idx=" + free_buf_idx);
@@ -476,27 +476,26 @@ class Manager
 					//trace("DecompressP done");
 					if (new_frame != null) { // do nothing if no meaningful data decoded
 						if (new_frame == prev_frame) { //no changes		
-							DataLoader.ELog("worker: pointer == prev_frame_addr) { //no changes");
+							//DataLoader.ELog("worker: pointer == prev_frame_addr) { //no changes");
 							update_bufs(prev_frame_buf_idx, next_frame_to_decode, false);
 						} else { //some changes
-							DataLoader.ELog("worker: pointer != prev_frame_addr) { //some changes");
+							//DataLoader.ELog("worker: pointer != prev_frame_addr) { //some changes");
 							update_bufs(free_buf_idx, next_frame_to_decode, true);							
 						}
-					} else 
-						DataLoader.ELog("worker: pointer == 0");					
+					} //else	DataLoader.ELog("worker: pointer == 0");					
 					next_frame_to_decode++;					
 				}
 			case frame_loading:	
 				loading_pause = true;
 				var me = this;
-				DataLoader.ELog("worker: loader.SetOnLoadOperComplete(me.loading_pause = false)");
+				//DataLoader.ELog("worker: loader.SetOnLoadOperComplete(me.loading_pause = false)");
 				loader.SetOnLoadOperComplete(function():Void { me.loading_pause = false; } );
-				DataLoader.ELog("worker: frame_loading, ret", t_entry);
+				//DataLoader.ELog("worker: frame_loading, ret", t_entry);
 				return;
 		}//switch
 		/*} catch (ex:openfl.errors.Error) { Logging.MLog("internal error " + ex + ";" + ex.getStackTrace()); }
 		  catch (ex:Dynamic) { Logging.MLog("internal error2 " + ex); }*/
-		DataLoader.ELog("worker done in ", t_entry);
+		//DataLoader.ELog("worker done in ", t_entry);
 		if (e != null && seek_cb != null)
 			force_work(10);			
 	}
@@ -513,16 +512,16 @@ class Manager
 	{
 		if (frame_num == frame_of_interest) {
 			if (delayed_fill != null) {
-				var t0 = DataLoader.ELog("decoded: calling delayed fill");
+				//var t0 = DataLoader.ELog("decoded: calling delayed fill");
 				var time = frame_num / fps;
 				delayed_fill(idx, time);
 				delayed_fill = null;
-				DataLoader.ELog("decoded: calling delayed fill done", t0);
+				//DataLoader.ELog("decoded: calling delayed fill done", t0);
 			}		
 			if (seek_cb != null) {
-				DataLoader.ELog("decoded: calling seek_cb");
+				//DataLoader.ELog("decoded: calling seek_cb");
 				seek_cb();
-				DataLoader.ELog("decoded: setting seek_cb=null");
+				//DataLoader.ELog("decoded: setting seek_cb=null");
 				seek_cb = null;
 			}
 		}
