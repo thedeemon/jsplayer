@@ -327,8 +327,8 @@ class Manager
 		//var pointer = addr_buffers + nbuf * buffer_size;
 		var conv_buffer : Int32Array = buffers[buffers.length - 1];
 		var src : Int32Array = buffers[nbuf];
-		var srcBytes = new Uint8Array( src.buffer );
-		var dstBytes = new Uint8Array( conv_buffer.buffer );
+		//var srcBytes = new Uint8Array( src.buffer );
+		//var dstBytes = new Uint8Array( conv_buffer.buffer );
 		var bdata = bitmap_data.image.buffer.data;
 		
 		if (bdata == null) { 
