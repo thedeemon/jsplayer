@@ -3,6 +3,7 @@ package ;
 import DataLoader;
 import IVideoCodec;
 import ScreenPressor;
+import js.Lib;
 import js.html.Uint8Array;
 import openfl.display.BitmapData;
 import openfl.events.TimerEvent;
@@ -327,28 +328,60 @@ class Manager
 		var src = buffers[nbuf];
 		var srcBytes = new Uint8Array( src.buffer );
 		var dstBytes = new Uint8Array( conv_buffer.buffer );
-		if (convert_fromRGB15) {
-			for(i in 0 ... buffer_size) {
-				var j = i * 4;
-				//conv_buffer[i] = src[i] << (11 + 8);
-				dstBytes[j + 1] = srcBytes[j] << 3;
-				dstBytes[j + 2] = srcBytes[j + 1] << 3;
-				dstBytes[j + 3] = srcBytes[j + 2] << 3;
-			}
+		var bdata = bitmap_data.image.buffer.data;
+		
+		//js.Lib.debug();
+		
+		if (bdata == null) { //tmp
+			if (convert_fromRGB15) {
+				for(i in 0 ... buffer_size) {
+					var j = i * 4;
+					//conv_buffer[i] = src[i] << (11 + 8);
+					dstBytes[j + 1] = srcBytes[j] << 3;
+					dstBytes[j + 2] = srcBytes[j + 1] << 3;
+					dstBytes[j + 3] = srcBytes[j + 2] << 3;
+				}
+			} else {
+				//RGB -> ABGR
+				for (i in 0 ... buffer_size) {
+					var j = i * 4;
+					//conv_buffer[i] = src[i] << 8;
+					dstBytes[j + 1] = srcBytes[j + 2];
+					dstBytes[j + 2] = srcBytes[j + 1];
+					dstBytes[j + 3] = srcBytes[j];
+				}				
+			}	
+			//js.Lib.debug();
+			var byteArr = ByteArray.fromArrayBuffer( conv_buffer.buffer );
+			bitmap_data.setPixels( rect , byteArr );
 		} else {
-			//RGB -> ABGR
-			for (i in 0 ... buffer_size) {
-				var j = i * 4;
-				//conv_buffer[i] = src[i] << 8;
-				dstBytes[j + 1] = srcBytes[j + 2];
-				dstBytes[j + 2] = srcBytes[j + 1];
-				dstBytes[j + 3] = srcBytes[j];
+			if (convert_fromRGB15) {
+				for(i in 0 ... buffer_size) {
+					var j = i * 4;
+					//conv_buffer[i] = src[i] << (11 + 8);
+					bdata[j + 0] = srcBytes[j] << 3;
+					bdata[j + 1] = srcBytes[j + 1] << 3;
+					bdata[j + 2] = srcBytes[j + 2] << 3;
+					bdata[j + 3] = 255;
+				}
+			} else {
+				//RGB -> ABGR
+				for (i in 0 ... buffer_size) {
+					var j = i * 4;
+					//conv_buffer[i] = src[i] << 8;
+					bdata[j + 0] = srcBytes[j + 2];
+					bdata[j + 1] = srcBytes[j + 1];
+					bdata[j + 2] = srcBytes[j];
+					bdata[j + 3] = 255;
+				}
 			}
+			//set image type to DATA so render() sees it and calls putImageData
+			lime.graphics.utils.ImageCanvasUtil.convertToData(bitmap_data.image); 
+			bitmap_data.image.dirty = true;
+			bitmap_data.image.version++;
+			//js.Lib.debug();
 		}
-		var byteArr = ByteArray.fromArrayBuffer( conv_buffer.buffer );
-		bitmap_data.lock();		
-		bitmap_data.setPixels( rect , byteArr );
-		bitmap_data.unlock();
+		
 		last_frame_drawn = frame_of_interest;
 	}
 	
