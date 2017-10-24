@@ -4,6 +4,7 @@ import DataLoader;
 import IVideoCodec;
 import ScreenPressor;
 import js.Lib;
+import js.html.Uint32Array;
 import js.html.Uint8Array;
 import openfl.display.BitmapData;
 import openfl.events.TimerEvent;
@@ -324,55 +325,55 @@ class Manager
 	{
 		if (frame_of_interest == last_frame_drawn) return; //already drawn
 		//var pointer = addr_buffers + nbuf * buffer_size;
-		var conv_buffer = buffers[buffers.length - 1];
-		var src = buffers[nbuf];
+		var conv_buffer : Int32Array = buffers[buffers.length - 1];
+		var src : Int32Array = buffers[nbuf];
 		var srcBytes = new Uint8Array( src.buffer );
 		var dstBytes = new Uint8Array( conv_buffer.buffer );
 		var bdata = bitmap_data.image.buffer.data;
 		
-		//js.Lib.debug();
-		
-		if (bdata == null) { //tmp
+		if (bdata == null) { 
 			if (convert_fromRGB15) {
 				for(i in 0 ... buffer_size) {
-					var j = i * 4;
-					//conv_buffer[i] = src[i] << (11 + 8);
+					/*var j = i * 4;
 					dstBytes[j + 1] = srcBytes[j] << 3;
 					dstBytes[j + 2] = srcBytes[j + 1] << 3;
-					dstBytes[j + 3] = srcBytes[j + 2] << 3;
+					dstBytes[j + 3] = srcBytes[j + 2] << 3;*/
+					conv_buffer[i] = src[i] << 11;
 				}
 			} else {
 				//RGB -> ABGR
 				for (i in 0 ... buffer_size) {
-					var j = i * 4;
-					//conv_buffer[i] = src[i] << 8;
+					/*var j = i * 4;
 					dstBytes[j + 1] = srcBytes[j + 2];
 					dstBytes[j + 2] = srcBytes[j + 1];
-					dstBytes[j + 3] = srcBytes[j];
+					dstBytes[j + 3] = srcBytes[j];*/
+					var c = src[i];
+					conv_buffer[i] = ((c & 255) << 24) | ((c & 0xFF00) << 8) | ((c & 0xFF0000) >> 8);
 				}				
 			}	
 			//js.Lib.debug();
 			var byteArr = ByteArray.fromArrayBuffer( conv_buffer.buffer );
 			bitmap_data.setPixels( rect , byteArr );
 		} else {
+			var dst = new Int32Array( bdata.buffer );
 			if (convert_fromRGB15) {
 				for(i in 0 ... buffer_size) {
-					var j = i * 4;
-					//conv_buffer[i] = src[i] << (11 + 8);
+					/*var j = i * 4;
 					bdata[j + 0] = srcBytes[j] << 3;
 					bdata[j + 1] = srcBytes[j + 1] << 3;
 					bdata[j + 2] = srcBytes[j + 2] << 3;
-					bdata[j + 3] = 255;
+					bdata[j + 3] = 255;*/
+					dst[i] = 0xFF000000 | (src[i] << 3);
 				}
 			} else {
-				//RGB -> ABGR
 				for (i in 0 ... buffer_size) {
-					var j = i * 4;
-					//conv_buffer[i] = src[i] << 8;
+					/*var j = i * 4;
 					bdata[j + 0] = srcBytes[j + 2];
 					bdata[j + 1] = srcBytes[j + 1];
 					bdata[j + 2] = srcBytes[j];
-					bdata[j + 3] = 255;
+					bdata[j + 3] = 255;*/
+					var c = src[i];
+					dst[i] = 0xFF000000 | ((c & 0xFF) << 16) | (c & 0xFF00) | ((c >> 16) & 0xFF);
 				}
 			}
 			//set image type to DATA so render() sees it and calls putImageData
