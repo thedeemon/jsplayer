@@ -240,7 +240,6 @@ class Main
             if ( Std.is( Lib.current.stage.stageWidth , Int ) )  
 			{                
 				trace("Lib.current.loaderInfo.parameters=" + Lib.current.loaderInfo.parameters);
-				trace("Lib.current.stage.stageWidth=" + Lib.current.stage.stageWidth);
 				var url = Lib.current.stage.loaderInfo.url;
 				
 				var flashVars : Dynamic<String> = Lib.current.loaderInfo.parameters;
@@ -279,7 +278,6 @@ class Main
 					#if tcp
 					var cookies = flashVars.cookies;
 					if (cookies != null) {
-						//trace("cookies: " + cookies);
 						var re = new EReg("#", "g");
 						HTTPClient.cookies = re.replace(cookies, "; ");
 					} else 
@@ -536,11 +534,9 @@ class Main
 	
 	function init_controls(fullscr : Bool):Void
 	{
-		//trace("init_controls, buttons_url=" + buttons_url);
 		var width:Int = Lib.current.stage.stageWidth;
 		var height:Int = Lib.current.stage.stageHeight;
 		panel_top = height - 78;
-		//var button_level = 20;
 		
 		controls = new Sprite();
 		controls.x = 0;
@@ -983,7 +979,6 @@ class Main
 		bar_rect.right = st_width - 30;
 		bar_rect.y = panel_top + 5;
 		controls.y = panel_top;
-		//trace("w=" + width + " bw=" + bar_rect.width);
 		
 		var d = 5;
 		seek_bar_bg = new Shape();
@@ -1114,7 +1109,6 @@ class Main
 			}
 		} else
 		if (!first_shown) {
-			//trace("loaderInfo.parameters: " + Lib.current.stage.loaderInfo.parameters);
 			switch(man.GetDecompressedFrame(0, bitmap_data, false)) {
 				case decompressed(_), soon : 
 					first_shown = true;
