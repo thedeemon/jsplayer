@@ -226,9 +226,8 @@ class SmallContext {
 	function create(c1 : Cx1, c : Int):Void {
 		d = c1.d;
 		var ss = c1.symb.subarray(0, d);
-		untyped ss.sort();
-		//for(i in 0...d) 
-		//std::sort(symbols, symbols + d);
+		//untyped ss.sort();
+		Sorter.insort(ss);
 		for (i in 0...d) {
 			symbols[i] = ss[i];			
 			if (symbols[i]==c) {
@@ -236,7 +235,6 @@ class SmallContext {
 			} else
 				freqs[i] = SmallContext.f0;
 		}
-		//for(i in d...S) freqs[i] = 0;				
 	}
 	
 	function addSymb(pos:Int, c:Int/*, uint16_t &totFr*/):Bool { 
@@ -521,8 +519,8 @@ class Cx6  {
 		}
 		var cumFr = 0, cfr = 0, lastSymb = 0;
 		var ss = cx.symb.subarray(0, oldd);
-		untyped ss.sort();
-		//std::sort(cx.symb->symbols, cx.symb->symbols + oldd);
+		//untyped ss.sort();
+		Sorter.insort(ss);
 		var newSymbPos = 0;
 		for(pos in 0...oldd) {
 			var s = cx.symb[pos];
@@ -860,3 +858,15 @@ class Context {
 		}		
 	}
 }//Context
+
+class Sorter {
+	public static function insort(a:Uint8Array) { //insertion sort for small arrays
+		for (i in 1...a.length) {
+			var j = i;
+			while (j > 0 && a[j - 1] > a[j]) {
+				var t = a[j]; a[j] = a[j - 1]; a[j - 1] = t;
+				j--;
+			}
+		}
+	}	
+}

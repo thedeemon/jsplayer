@@ -112,6 +112,7 @@ class PostStream //extends URLStream
 
 	public function readBytes (bytes: ByteArray, offset:UInt = 0, length:UInt = 0):Void {
 		var txt = xr.responseText;
+		bytes[offset + length - 1] = 0;
 		for (i in 0...length)
 			bytes[offset + i] = txt.charCodeAt(readPos + i) & 255;
 		readPos += length;

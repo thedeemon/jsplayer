@@ -150,7 +150,7 @@ class DataLoader
 	{
 		var n = stream.bytesAvailable;
 		//js.Lib.debug();
-		#if logging
+		/*#if logging
 		var details = "";
 		var show = false;
 		if (e != null) {
@@ -164,7 +164,7 @@ class DataLoader
 			//Logging.MLog("DataLoader.on_progress: stream.bytesAvailable=" + n + details);
 			last_logged_sz = e.bytesLoaded;
 		}
-		#end
+		#end*/
 		
 		if (stop_loading) { 
 			//Logging.MLog("on_progress: stop_loading is true, returning");
