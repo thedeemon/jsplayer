@@ -1,6 +1,8 @@
 package ;
 
+import js.Browser;
 import js.html.XMLHttpRequest;
+import openfl.events.TimerEvent;
 import openfl.net.URLRequestHeader;
 import openfl.net.URLRequestMethod;
 import openfl.net.URLStream;
@@ -11,8 +13,9 @@ import openfl.utils.ByteArray;
 import openfl.events.Event;
 import openfl.events.ProgressEvent;
 import openfl.events.IOErrorEvent;
+import openfl.utils.Timer;
 
-class PostStream //extends URLStream
+class PostStream 
 {	
 	public var connected(get, never):Bool;
 	public var endian : Endian;
@@ -21,6 +24,9 @@ class PostStream //extends URLStream
 	var xr : XMLHttpRequest;
 	var curState : Int;
 	var readPos : Int;
+	var stateChanging : Bool;
+	var stateChanged : Bool;
+	var loadTimer : Timer;	
 	//event listeners
 	var onProgress : Dynamic -> Void;
 	var onComplete : Dynamic -> Void;
@@ -64,19 +70,24 @@ class PostStream //extends URLStream
 				onError(e);
 			}
 		};
+		
 		var s = request.requestHeaders.map(function(h) { return h.name + "=" + h.value; }).join("&");
 		Logging.MLog("PostStream sending request to " + request.url + " with " + s);
 		xr.send(s);
 	}
-	
-	var stateChanging : Bool;
-	
-	function onStateChange() {
+		
+	function progressTimer(te:TimerEvent):Void {
+		if (!stateChanged) return;
+		stateChanged = false;
+		
 		curState = xr.readyState;
 		//Logging.MLog("PostStream.onStateChange state="+ curState);
 		if (stateChanging) return;
 		stateChanging = true;
-		if (onProgress != null && (curState==3 || curState==4)) {
+		if (onProgress != null && (curState == 3 || curState == 4)) {
+			//var dt = Browser.window.performance.now() - time0;
+			//Logging.MLog(" onStateChange dt=" + dt);
+			
 			var e = new ProgressEvent(ProgressEvent.PROGRESS, false, false, xr.responseText.length, 0);
 			onProgress(e);
 		}
@@ -84,7 +95,17 @@ class PostStream //extends URLStream
 			var e = new Event(Event.COMPLETE);
 			onComplete(e);
 		}
-		stateChanging = false;
+		stateChanging = false;		
+	}
+	
+	function onStateChange() {
+		stateChanged = true;
+		if (loadTimer == null) {
+			loadTimer = new Timer(250, 0);
+			loadTimer.addEventListener(TimerEvent.TIMER, progressTimer);
+			loadTimer.start();
+			progressTimer(null);
+		}		
 	}
 	
 	public function StopAndClean():Void
@@ -93,6 +114,10 @@ class PostStream //extends URLStream
 			close();
 		xr = null;
 		onError = null; onProgress = null; onComplete = null;
+		if (loadTimer != null) {
+			loadTimer.stop();
+			loadTimer = null;
+		}
 	}
 	
 	public function get_connected ():Bool {
