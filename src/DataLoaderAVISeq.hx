@@ -1,5 +1,6 @@
 package ;
 import DataLoader;
+import js.html.Uint8Array;
 import openfl.utils.ByteArray;
 import haxe.Timer;
 import AVIParser;
@@ -37,10 +38,11 @@ class DataLoaderAVISeq extends DataLoader
 		} //don't do this if zero-length frames are present in the stream and so passed here
 		
 		if (frames[avi_parsing_pos] != null) {
-			frames[avi_parsing_pos].data = arr;
+			frames[avi_parsing_pos].data = new Uint8Array( arr.toArrayBuffer() );
 		} else {
-			var keyfr = (avi_parsing_pos == 0 ? true : (decoder != null ? decoder.IsKeyFrame(arr) : false));
-			frames[avi_parsing_pos] = { key : keyfr, data : arr, ix: -1, significant_changes : null };
+			var u8a = new Uint8Array( arr.toArrayBuffer() );
+			var keyfr = (avi_parsing_pos == 0 ? true : (decoder != null ? decoder.IsKeyFrame(u8a) : false));
+			frames[avi_parsing_pos] = { key : keyfr, data : u8a, ix: -1, significant_changes : null };
 		}
 		avi_parsing_pos++;
 	}

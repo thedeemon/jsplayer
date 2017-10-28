@@ -5,7 +5,7 @@ import js.html.XMLHttpRequest;
 import openfl.events.TimerEvent;
 import openfl.net.URLRequestHeader;
 import openfl.net.URLRequestMethod;
-import openfl.net.URLStream;
+//import openfl.net.URLStream;
 import openfl.net.URLRequest;
 import openfl.net.URLVariables;
 import openfl.utils.Endian;
@@ -175,5 +175,26 @@ class PostStream
 		if (type == ProgressEvent.PROGRESS)	onProgress = listener; 
 		if (type == Event.COMPLETE) onComplete = listener;
 		if (type == openfl.events.IOErrorEvent.IO_ERROR) onError = listener;
+	}
+}
+
+class GetStream extends PostStream {
+	public function new() { super(); }
+	
+	override public function load(request:URLRequest):Void 
+	{
+		xr.open("GET", request.url);
+		xr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+		xr.onreadystatechange = onStateChange;
+		xr.onerror = function() {
+			if (onError != null) {
+				var e = new Event(IOErrorEvent.IO_ERROR);
+				onError(e);
+			}
+		};
+		
+		//var s = request.requestHeaders.map(function(h) { return h.name + "=" + h.value; }).join("&");
+		Logging.MLog("GetStream sending request to " + request.url);
+		xr.send(null);
 	}
 }

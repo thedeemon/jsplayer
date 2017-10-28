@@ -8,13 +8,7 @@ import openfl.utils.Endian;
 import haxe.Timer;
 import InputBuffer;
 import AudioTrack;
-#if tcp
-import HTTPClient;
-#elseif indexed
 import PostStream;
-#else
-import openfl.net.URLStream;
-#end
 import VideoData;
 import Int64;
 import openfl.external.ExternalInterface;
@@ -29,12 +23,10 @@ enum PossibleChange { change(pos : Int); unknown(pos : Int); }
 
 class DataLoader 
 {	
-#if !indexed
-	var stream : URLStream;
-#elseif tcp
-	var stream : HTTPClient;
-#else
+#if indexed
 	var stream : PostStream;
+#else
+	var stream : GetStream;
 #end
 	var frames : Array<CompressedFrame>;
 	var reader : Void -> ReadStatus;
@@ -79,12 +71,10 @@ class DataLoader
 	
 	public function Open(url: String, video_info_callback : VideoInfo -> Void):Void
 	{
-		#if !indexed
-		stream = new URLStream();
-		#elseif tcp
-		stream = new HTTPClient();
-		#else		
+		#if indexed
 		stream = new PostStream();
+		#else		
+		stream = new GetStream();
 		#end
 		var req = new URLRequest(url);
 		video_info_cb = video_info_callback;
