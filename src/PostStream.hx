@@ -15,7 +15,7 @@ import openfl.events.ProgressEvent;
 import openfl.events.IOErrorEvent;
 import openfl.utils.Timer;
 
-class PostStream 
+class XhrStream 
 {	
 	public var connected(get, never):Bool;
 	public var endian : Endian;
@@ -38,56 +38,15 @@ class PostStream
 		curState = 0; readPos = 0;
 		stateChanging = false;
 	}
-		
-	public function LoadPart(req:URLRequest, ?from:String, ?to:String):Void 
-	{
-		var hs = new Array<URLRequestHeader>();
-		var vs = new URLVariables();
-		if (from != null) {
-			hs.push(new URLRequestHeader("s", from));
-			vs.s = from;
-		}
-		if (to != null) {
-			hs.push(new URLRequestHeader("e", to));			
-			vs.e = to;
-		}
-		if (hs.length > 0) {
-			req.requestHeaders = hs;
-			req.data = vs;
-		}
-			
-		req.method = URLRequestMethod.POST;		
-		load(req);
-	}
-	
-	public function load(request:URLRequest):Void {
-		xr.open("POST", request.url);
-		xr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-		xr.onreadystatechange = onStateChange;
-		xr.onerror = function() {
-			if (onError != null) {
-				var e = new Event(IOErrorEvent.IO_ERROR);
-				onError(e);
-			}
-		};
-		
-		var s = request.requestHeaders.map(function(h) { return h.name + "=" + h.value; }).join("&");
-		Logging.MLog("PostStream sending request to " + request.url + " with " + s);
-		xr.send(s);
-	}
-		
+				
 	function progressTimer(te:TimerEvent):Void {
 		if (!stateChanged) return;
 		stateChanged = false;
 		
 		curState = xr.readyState;
-		//Logging.MLog("PostStream.onStateChange state="+ curState);
 		if (stateChanging) return;
 		stateChanging = true;
 		if (onProgress != null && (curState == 3 || curState == 4)) {
-			//var dt = Browser.window.performance.now() - time0;
-			//Logging.MLog(" onStateChange dt=" + dt);
-			
 			var e = new ProgressEvent(ProgressEvent.PROGRESS, false, false, xr.responseText.length, 0);
 			onProgress(e);
 		}
@@ -121,9 +80,7 @@ class PostStream
 	}
 	
 	public function get_connected ():Bool {
-		var isit = curState == 2 || curState == 3;
-		//Logging.MLog("PostStream.connected: " + isit);
-		return isit;
+		return curState == 2 || curState == 3;
 	}
 	
 	public function close():Void {
@@ -168,8 +125,7 @@ class PostStream
 		function on_error_idx(e:Event):Void
 	 * 
 	 * */
-		
-	 
+			 
 	public function addEventListener (type:String, listener:Dynamic -> Void):Void {
 		//trace("PostStream.addEventListener type=" + type);
 		if (type == ProgressEvent.PROGRESS)	onProgress = listener; 
@@ -178,10 +134,51 @@ class PostStream
 	}
 }
 
-class GetStream extends PostStream {
+class PostStream extends XhrStream {
 	public function new() { super(); }
 	
-	override public function load(request:URLRequest):Void 
+	public function LoadPart(req:URLRequest, ?from:String, ?to:String):Void 
+	{
+		var hs = new Array<URLRequestHeader>();
+		var vs = new URLVariables();
+		if (from != null) {
+			hs.push(new URLRequestHeader("s", from));
+			vs.s = from;
+		}
+		if (to != null) {
+			hs.push(new URLRequestHeader("e", to));			
+			vs.e = to;
+		}
+		if (hs.length > 0) {
+			req.requestHeaders = hs;
+			req.data = vs;
+		}
+			
+		req.method = URLRequestMethod.POST;		
+		load(req);
+	}
+	
+	public function load(request:URLRequest):Void {
+		xr.open("POST", request.url);
+		xr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+		xr.onreadystatechange = onStateChange;
+		xr.onerror = function() {
+			if (onError != null) {
+				var e = new Event(IOErrorEvent.IO_ERROR);
+				onError(e);
+			}
+		};
+		
+		var s = request.requestHeaders.map(function(h) { return h.name + "=" + h.value; }).join("&");
+		Logging.MLog("PostStream sending request to " + request.url + " with " + s);
+		xr.send(s);
+	}	
+}
+
+class GetStream extends XhrStream {
+	public function new() { super(); }
+	
+	public function load(request:URLRequest):Void 
 	{
 		xr.open("GET", request.url);
 		xr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
@@ -193,7 +190,6 @@ class GetStream extends PostStream {
 			}
 		};
 		
-		//var s = request.requestHeaders.map(function(h) { return h.name + "=" + h.value; }).join("&");
 		Logging.MLog("GetStream sending request to " + request.url);
 		xr.send(null);
 	}
