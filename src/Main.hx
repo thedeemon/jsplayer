@@ -427,7 +427,8 @@ class Main
 		ver_slider_rect = ver_slider.getBounds(Lib.current.stage);		
 	}
 	
-	/*function load_thumbnail(thumb_url:String):Void
+	#if wait
+	function load_thumbnail(thumb_url:String):Void
 	{
 		thumb_loader = new Loader();
 		thumb_loader.contentLoaderInfo.addEventListener(Event.COMPLETE, on_thumb_loaded);
@@ -441,14 +442,16 @@ class Main
 	{		
 		var width:Int = Lib.current.stage.stageWidth;
 		var height:Int = Lib.current.stage.stageHeight;		
-		var bmp = cast(e.target.loader.content, Bitmap);
+		var bmp = cast(thumb_loader.content, Bitmap);
 		bmp.scaleX = width / bmp.width;
 		bmp.scaleY = height / bmp.height;
 		bmp.smoothing = true;
-	}*/
+	}
+	#end
 	
-	function on_thumb_error(e:Event):Void
+	function on_thumb_error(e:Event):Void	
 	{		
+		trace("failed to load thumbnail image");
 	}
 	
 	function draw_start_btn(on_start_clicked : Void->Void):Void
@@ -470,8 +473,9 @@ class Main
 		start_btn.graphics.drawCircle(width / 2, height / 2, d/2);
 		start_btn.graphics.endFill();		
 		start_btn.graphics.beginFill(0x202020, 1.0);
-		var coords = Vector.ofArray([0.4 * d + x0, 0.28 * d + y0, 0.4 * d + x0, 0.73 * d + y0, 0.7 * d + x0, 0.5 * d + y0]);
-		start_btn.graphics.drawTriangles(coords);
+		start_btn.graphics.moveTo(0.4 * d + x0, 0.28 * d + y0);
+		start_btn.graphics.lineTo(0.4 * d + x0, 0.73 * d + y0);
+		start_btn.graphics.lineTo(0.7 * d + x0, 0.5 * d + y0);
 		start_btn.graphics.endFill();		
 		start_btn.alpha = 0.8;
 		var me = this;
