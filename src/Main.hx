@@ -203,14 +203,6 @@ class Main
 		return x == null ? defval : x;
 	}
 	
-#if tcp	
-	function get_cookies():Void
-	{	
-		var s = ExternalInterface.call("function() { return document.cookie; }");
-		if (s != null) HTTPClient.cookies = s;
-	}
-#end
-
 	function full_path(url: String, fname : String):String
 	{
 		if (fname == null) return null;
@@ -225,12 +217,7 @@ class Main
 	
 	function check_full_screen():Bool
 	{
-		/*if (ExternalInterface.available) {
-			var fs = ExternalInterface.call( "function() { var s = document.getElementsByTagName('body')[0].innerHTML; if(s.toLowerCase().indexOf('allowfullscreen=\"true\"') != -1){ return true;}else{ return false;} }" );			
-			return cast(fs, Bool);
-		}*/
 		return true;
-		//return false;
 	}
 
 	function on_load_timer(e:TimerEvent):Void
@@ -274,22 +261,10 @@ class Main
 							DataLoaderAVIIndexed.storage_limit = sz * 1000000;						
 					}
 					#end
-					
-					#if tcp
-					var cookies = flashVars.cookies;
-					if (cookies != null) {
-						var re = new EReg("#", "g");
-						HTTPClient.cookies = re.replace(cookies, "; ");
-					} else 
-						get_cookies();
-					#end
-					
-					Security.allowDomain("*");
-					Security.allowInsecureDomain("*");
-					
+										
 					#if wait
 					var thumb = flashVars.thumb;
-					if (thumb != null) {
+					if (thumb != null && another_video == null) {
 						load_thumbnail(full_path(url, thumb));
 						var me = this;
 						draw_start_btn(function():Void { me.man.Open(fname, me.on_open); } );

@@ -8,11 +8,7 @@ import openfl.utils.ByteArray;
 import openfl.utils.Endian;
 import openfl.net.URLRequest;
 import haxe.Timer;
-#if tcp
-import HTTPClient;
-#else
 import PostStream;
-#end
 import Parser;
 import InputBuffer;
 import DataLoader;
@@ -24,11 +20,7 @@ import js.html.Uint8Array;
 
 class DataLoaderAVIIndexed extends DataLoader
 {
-	#if tcp
-	var idx_stream : HTTPClient;
-	#else
 	var idx_stream : PostStream;
-	#end
 	var req : URLRequest;
 	var idx_buffer : InputBuffer;
 	var idx_stream_start_pos : Int64; //position in file of requested part
@@ -78,17 +70,12 @@ class DataLoaderAVIIndexed extends DataLoader
 		last_requested_frame = 0;
 		reading_start_position = new Int64(0, 0);
 		stop_loading = false;
-		#if tcp
-		stream = new HTTPClient();
-		#else
 		stream = new PostStream();
-		#end
 		
 		stream.addEventListener(ProgressEvent.PROGRESS, on_progress);
 		stream.addEventListener(Event.COMPLETE, on_complete);	
 		stream.addEventListener(openfl.events.IOErrorEvent.IO_ERROR, on_error);
 		stream.addEventListener(SecurityErrorEvent.SECURITY_ERROR, on_security_error);
-
 		
 		req = new URLRequest(url);		
 		stream.LoadPart(req, "0", "999999");					
@@ -231,11 +218,7 @@ class DataLoaderAVIIndexed extends DataLoader
 	function start_loading_idx1(pos : UInt):Void
 	{
 		//trace("start_loading_idx1 pos=" + pos);
-		#if tcp
-		idx_stream = new HTTPClient();
-		#else
 		idx_stream = new PostStream();
-		#end
 		idx_stream.addEventListener(ProgressEvent.PROGRESS, on_idx1_data);
 		idx_stream.addEventListener(Event.COMPLETE, on_idx1_data);		
 		idx_stream.addEventListener(openfl.events.IOErrorEvent.IO_ERROR, on_error_idx);
@@ -394,11 +377,7 @@ class DataLoaderAVIIndexed extends DataLoader
 		var idx_offset_str = indexes[n].idx_offset.toString();
 		var endpos_str = indexes[n].idx_offset.Add(indexes[n].size_in_bytes - 1).toString();
 		//Logging.MLog("start_loading_ix n=" + n + " off=" + idx_offset_str + " end=" + endpos_str);
-		#if tcp
-		idx_stream = new HTTPClient();		
-		#else
 		idx_stream = new PostStream();
-		#end
 		idx_stream.addEventListener(ProgressEvent.PROGRESS, on_ix_data);
 		idx_stream.addEventListener(Event.COMPLETE, on_ix_data);		
 		idx_buffer = new InputBuffer();		
