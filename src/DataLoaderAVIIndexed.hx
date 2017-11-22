@@ -595,11 +595,7 @@ class DataLoaderAVIIndexed extends DataLoader
 		reading_start_position = offset;
 		last_requested_frame = nxk - 1;
 		stop_loading = false;
-		#if tcp
-		stream = new HTTPClient();
-		#else
 		stream = new PostStream();
-		#end
 		//stream.endian = Endian.LITTLE_ENDIAN; 
 		stream.addEventListener(ProgressEvent.PROGRESS, on_progress);
 		stream.addEventListener(Event.COMPLETE, on_complete);	
