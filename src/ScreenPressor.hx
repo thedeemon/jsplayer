@@ -302,7 +302,7 @@ class ScreenPressor implements IVideoCodec
 	
 	public function DecompressP(src:Uint8Array, dst:Int32Array):PFrameResult 
 	{
-		Logging.MLog("SP decompressP sz=" + src.length + " bpp=" + bpp);
+		//Logging.MLog("SP decompressP sz=" + src.length + " bpp=" + bpp);
 		//var t0 = Browser.window.performance.now();
 
 		if (src.length == 0 || !decodedI)

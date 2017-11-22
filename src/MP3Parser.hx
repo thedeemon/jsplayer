@@ -1,13 +1,15 @@
 package ;
+import js.Lib;
+import js.html.Uint8Array;
 import openfl.display.Loader;
 import openfl.events.TimerEvent;
 import openfl.utils.ByteArray;
 import openfl.utils.Timer;
 import InputBuffer;
-import openfl.media.Sound;
 import openfl.display.LoaderInfo;
 import openfl.events.Event;
 import openfl.utils.Endian;
+import WASound;
 
 typedef Range = {
 	var start : UInt;
@@ -21,7 +23,7 @@ class MP3Parser
 	var frames : Array<Range>;
 	var sample_rate : Int;
 	var frames_processed : Int;
-	var section_handler : Float -> Float -> Sound -> Void; //start, duration, sound
+	var section_handler : Float -> Uint8Array -> Bool -> Void; //(start, sound data, last?)
 	var long_frames : Array<Range>;
 	var long_frames_processed : Int;
 	var no_more_data : Bool;
@@ -36,8 +38,9 @@ class MP3Parser
 	private static inline var FRAMES_IN_SECTION : Int = 200; //~5 sec
 	private static inline var FRAMES_IN_LONG_SECTION : Int = 2300; //~1 min
 
-	public function new(buffer : InputBuffer, sound_handler : Float -> Float -> Sound -> Void) 
+	public function new(buffer : InputBuffer, sound_handler : Float -> Uint8Array -> Bool -> Void) 
 	{
+		Logging.MLog("new MP3Parser");
 		input = buffer;
 		section_handler = sound_handler;
 		position = 0;
@@ -49,6 +52,7 @@ class MP3Parser
 		parsing_complete = false;		
 		sections_pending = 0;
 		started = false;
+		sample_rate = 44100;
 	}
 	
 	public function NoMoreSound():Bool
@@ -59,6 +63,7 @@ class MP3Parser
 	public function Parse():Void
 	{
 		if (parsing_complete) return;
+		Logging.MLog("MP3 Parse()");
 		var t0 = haxe.Timer.stamp();
 		var t1 = t0;
 		var repeat = false;
@@ -98,6 +103,7 @@ class MP3Parser
 	
 	function add_mp3_frame(rng : Range):Void
 	{
+		//Logging.MLog("add_mp3_frame rng.start=" + rng.start);
 		frames.push( rng );
 		if (frames.length >= FRAMES_IN_SECTION) 
 			generate_short_sound(false);		
@@ -196,11 +202,13 @@ class MP3Parser
 	
 	function generate_short_sound(last_portion : Bool):Void
 	{
+		Logging.MLog("generate_short_sound last=" + last_portion);
 		var frame_duration = 1152 / sample_rate;
 		var start_time = frame_duration * frames_processed;
 		//trace("sample_rate=" + sample_rate + " frame_dur=" + frame_duration);
-		
-		generate_sound(frames, start_time);
+		//js.Lib.debug();
+		if (!last_portion)
+			generate_sound(frames, start_time, false);
 		
 		var to_long = last_portion ? frames : frames.slice(0, -4);
 		for (f in to_long)
@@ -217,146 +225,33 @@ class MP3Parser
 		}
 		
 		if (long_frames.length >= FRAMES_IN_LONG_SECTION || last_portion)			
-			generate_long_sound();
+			generate_long_sound(last_portion);
 	}
 	
-	function generate_long_sound():Void
+	function generate_long_sound(last : Bool):Void
 	{
 		var frame_duration = 1152 / sample_rate;
 		var start_time = frame_duration * long_frames_processed;
-		//trace("gen_long frame_dur=" + frame_duration + " long_frm_proc=" + long_frames_processed + " start=" + start_time);
-		generate_sound(long_frames, start_time);
+		generate_sound(long_frames, start_time, last);
 		var num_saved = 4;
 		var last_frames = long_frames.slice( -num_saved );		
 		long_frames_processed += long_frames.length - num_saved;
 		long_frames = last_frames;
 	}
 	
-	private function generate_sound(mp3frames : Array<Range>, start_time : Float):Bool
+	private function generate_sound(mp3frames : Array<Range>, start_time : Float, last : Bool):Void
 	{
-		if (mp3frames.length < 1) return false;
-		var t0 = haxe.Timer.stamp();
-		var swfBytes:ByteArray = new ByteArray();
-		swfBytes.endian = Endian.LITTLE_ENDIAN;
-		for(b in sound_class_swf_bytes1)		
-			swfBytes.writeByte(b);
+		if (mp3frames.length < 1) return;
 		
-		var swfSizePosition = swfBytes.position;
-		swfBytes.writeInt(0); //swf size will go here
-		for(b in sound_class_swf_bytes2)		
-			swfBytes.writeByte(b);
-		
-		var audioSizePosition = swfBytes.position;
-		swfBytes.writeInt(0); //audiodatasize+7 to go here
-		swfBytes.writeByte(1);
-		swfBytes.writeByte(0);
-		var hd = input.ReadIntBigEndian(mp3frames[0].start);
-		swfBytes.writeByte(swf_format_byte(hd));		
-		
-		var sampleSizePosition = swfBytes.position;
-		swfBytes.writeInt(0); //number of samples goes here
-		
-		swfBytes.writeByte(0); //seeksamples
-		swfBytes.writeByte(0);
-					
-		var frameCount = 0;		
-		var byteCount = 0; //this includes the seeksamples written earlier
-		var frm_data = new ByteArray();		
-					
-		var t2 = haxe.Timer.stamp();
-		swfBytes.length = swfBytes.length + mp3frames.length * mp3frames[0].length + 2048;
-		
-		for (rng in mp3frames) 
-		{				
-			if (frm_data.length < rng.length)
-				frm_data.length = rng.length; 
-			input.ReadBytes(rng.start, frm_data, 0, rng.length);
-			swfBytes.writeBytes(frm_data, 0, rng.length);			
-			byteCount += rng.length;
-			frameCount++;
+		var sumLength : UInt = 0;
+		for (f in mp3frames) sumLength += f.length;
+		var data = new Uint8Array(sumLength);
+		var off = 0;
+		for (f in mp3frames) {
+			input.ReadToArray(f.start, data, off, f.length);
+			off += f.length;
 		}
-		var t3 = haxe.Timer.stamp();
-		
-		if(byteCount==0)		
-			return false;
-		
-		byteCount+=2;
-		var currentPos = swfBytes.position;
-		swfBytes.position = audioSizePosition;
-		swfBytes.writeInt(byteCount+7);
-		swfBytes.position = sampleSizePosition;
-		swfBytes.writeInt(frameCount*1152);
-		swfBytes.position = currentPos;
-		for(b in sound_class_swf_bytes3)
-			swfBytes.writeByte(b);
-		swfBytes.position = swfSizePosition;
-		swfBytes.writeInt(swfBytes.length);
-		swfBytes.position=0;
-		var swfBytesLoader:Loader = new Loader();
-		var me = this;
-		sections_pending++;
-		var swfCreated = function(ev:Event):Void
-			{
-				//var t2 = Timer.stamp();				
-				var loaderInfo:LoaderInfo = cast(ev.currentTarget , LoaderInfo);
-				var soundClass:Class<Dynamic> = cast(loaderInfo.applicationDomain.getDefinition("SoundClass"), Class<Dynamic>);
-				var sound:Sound = Type.createInstance(soundClass, []); //new soundClass();				
-				//trace("sound created start=" + start_time + " length=" + sound.length/1000 + " dt2=" + (t2 - t0));
-				me.sections_pending--;
-				me.section_handler(start_time, sound.length / 1000, sound);
-			};
-		swfBytesLoader.contentLoaderInfo.addEventListener(Event.COMPLETE, swfCreated);
-		var t4 = haxe.Timer.stamp();
-		swfBytesLoader.loadBytes(swfBytes);
-		var t1 = haxe.Timer.stamp();
-		/*if (frameCount > FRAMES_IN_SECTION)
-			//trace("gensound start=" + start_time + " frames=" + frameCount + " dt=" + (t1 - t0) +
-			 " for=" + (t3-t2) + " load=" + (t1-t4));*/
-		return true;
+		section_handler(start_time, data, last);
 	}
 	
-	private static var sound_class_swf_bytes1:Array<Int> =	[ 0x46 , 0x57 , 0x53 , 0x09 ];
-	private static var sound_class_swf_bytes2:Array<Int> =
-		[	
-			0x78 , 0x00 , 0x05 , 0x5F , 0x00 , 0x00 , 0x0F , 0xA0 , 
-			0x00 , 0x00 , 0x0C , 0x01 , 0x00 , 0x44 , 0x11 , 0x08 , 
-			0x00 , 0x00 , 0x00 , 0x43 , 0x02 , 0xFF , 0xFF , 0xFF , 
-			0xBF , 0x15 , 0x0B , 0x00 , 0x00 , 0x00 , 0x01 , 0x00 , 
-			0x53 , 0x63 , 0x65 , 0x6E , 0x65 , 0x20 , 0x31 , 0x00 , 
-			0x00 , 0xBF , 0x14 , 0xC8 , 0x00 , 0x00 , 0x00 , 0x00 , 
-			0x00 , 0x00 , 0x00 , 0x00 , 0x10 , 0x00 , 0x2E , 0x00 , 
-			0x00 , 0x00 , 0x00 , 0x08 , 0x0A , 0x53 , 0x6F , 0x75 , 
-			0x6E , 0x64 , 0x43 , 0x6C , 0x61 , 0x73 , 0x73 , 0x00 , 
-			0x0B , 0x66 , 0x6C , 0x61 , 0x73 , 0x68 , 0x2E , 0x6D , 
-			0x65 , 0x64 , 0x69 , 0x61 , 0x05 , 0x53 , 0x6F , 0x75 , 
-			0x6E , 0x64 , 0x06 , 0x4F , 0x62 , 0x6A , 0x65 , 0x63 , 
-			0x74 , 0x0F , 0x45 , 0x76 , 0x65 , 0x6E , 0x74 , 0x44 , 
-			0x69 , 0x73 , 0x70 , 0x61 , 0x74 , 0x63 , 0x68 , 0x65 , 
-			0x72 , 0x0C , 0x66 , 0x6C , 0x61 , 0x73 , 0x68 , 0x2E , 
-			0x65 , 0x76 , 0x65 , 0x6E , 0x74 , 0x73 , 0x06 , 0x05 , 
-			0x01 , 0x16 , 0x02 , 0x16 , 0x03 , 0x18 , 0x01 , 0x16 , 
-			0x07 , 0x00 , 0x05 , 0x07 , 0x02 , 0x01 , 0x07 , 0x03 , 
-			0x04 , 0x07 , 0x02 , 0x05 , 0x07 , 0x05 , 0x06 , 0x03 , 
-			0x00 , 0x00 , 0x02 , 0x00 , 0x00 , 0x00 , 0x02 , 0x00 , 
-			0x00 , 0x00 , 0x02 , 0x00 , 0x00 , 0x01 , 0x01 , 0x02 , 
-			0x08 , 0x04 , 0x00 , 0x01 , 0x00 , 0x00 , 0x00 , 0x01 , 
-			0x02 , 0x01 , 0x01 , 0x04 , 0x01 , 0x00 , 0x03 , 0x00 , 
-			0x01 , 0x01 , 0x05 , 0x06 , 0x03 , 0xD0 , 0x30 , 0x47 , 
-			0x00 , 0x00 , 0x01 , 0x01 , 0x01 , 0x06 , 0x07 , 0x06 , 
-			0xD0 , 0x30 , 0xD0 , 0x49 , 0x00 , 0x47 , 0x00 , 0x00 , 
-			0x02 , 0x02 , 0x01 , 0x01 , 0x05 , 0x1F , 0xD0 , 0x30 , 
-			0x65 , 0x00 , 0x5D , 0x03 , 0x66 , 0x03 , 0x30 , 0x5D , 
-			0x04 , 0x66 , 0x04 , 0x30 , 0x5D , 0x02 , 0x66 , 0x02 , 
-			0x30 , 0x5D , 0x02 , 0x66 , 0x02 , 0x58 , 0x00 , 0x1D , 
-			0x1D , 0x1D , 0x68 , 0x01 , 0x47 , 0x00 , 0x00 , 0xBF , 
-			0x03 
-	];
-	private static var sound_class_swf_bytes3:Array<Int> =
-	[ 
-		0x3F , 0x13 , 0x0F , 0x00 , 0x00 , 0x00 , 0x01 , 0x00 , 
-		0x01 , 0x00 , 0x53 , 0x6F , 0x75 , 0x6E , 0x64 , 0x43 , 
-		0x6C , 0x61 , 0x73 , 0x73 , 0x00 , 0x44 , 0x0B , 0x0F , 
-		0x00 , 0x00 , 0x00 , 0x40 , 0x00 , 0x00 , 0x00 
-	];
-	
-}
+}//MP3Parser

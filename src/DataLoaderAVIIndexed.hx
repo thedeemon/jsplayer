@@ -53,6 +53,7 @@ class DataLoaderAVIIndexed extends DataLoader
 	
 	public function new() 
 	{
+		Logging.MLog("new DLAI");
 		super();
 		is_index_loaded = false;
 		pos_in_idx1_buf = 0;				
@@ -95,6 +96,7 @@ class DataLoaderAVIIndexed extends DataLoader
 	
 	override public function StopAndClean()
 	{
+		Logging.MLog("DLAI.StopAndClean");
 		if (stream!=null) {
 			stream.StopAndClean();
 			stream = null;
@@ -218,6 +220,7 @@ class DataLoaderAVIIndexed extends DataLoader
 	
 	function add_sound_chunk(chunk : ByteArray):Void
 	{
+		//Logging.MLog("add_sound_chunk len=" + chunk.length);
 		if (reading_start_position.Eq(zero64)) {
 			sound_buffer.AddChunk(chunk);
 			sum_size_loaded += chunk.length;

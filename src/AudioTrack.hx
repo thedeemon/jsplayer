@@ -1,15 +1,20 @@
 package ;
-import openfl.media.Sound;
-import openfl.media.SoundChannel;
+import js.Lib;
+import js.html.audio.AudioBuffer;
+import js.html.audio.AudioBufferSourceNode;
 import openfl.utils.Timer;
 import openfl.events.TimerEvent;
+import js.html.audio.AudioContext;
+import js.html.Uint8Array;
+import WASound;
+import Logging;
 
 class Fragment {
 	public var start_time(default, null) : Float;
 	public var duration(default, null) : Float;
-	public var sound(default, null) : Sound;
+	public var sound(default, null) : WASound;
 	
-	public function new(start:Float, dur:Float, snd:Sound)
+	public function new(start:Float, dur:Float, snd:WASound)
 	{
 		start_time = start; duration = dur; sound = snd;
 	}
@@ -29,17 +34,40 @@ class AudioTrack
 {
 	var sections : Array<Fragment>;
 	var next_sec_timer : Timer;
-	var sound_channel : SoundChannel;
+	//var sound_channel : SoundChannel;
+	var playing_sound : WASound;
 	public var time_loaded(default, null) : Float;
+	static var ctx : AudioContext;
 
 	public function new() 
 	{
 		sections = new Array<Fragment>();
+		ctx = new AudioContext();
 		time_loaded = 0;
 	}
 	
-	public function AddFragment(start : Float, dur : Float, snd : Sound):Void
+	public function AddFragment(start : Float, data : Uint8Array, last : Bool):Void
 	{
+		Logging.MLog("ATrack.AddFragment start=" + start);
+		ctx.decodeAudioData(data.buffer, function(s:AudioBuffer) {
+				Logging.MLog("decoded dur=" + s.duration);
+				var wasound = new WASound(s);
+				addFragmentSound(start, s.duration, wasound, last);
+			}, 
+			function() { Logging.MLog("decode failed for fragment at t=" + start); }
+		);		
+	}
+	
+	public static function makeNode(b : AudioBuffer) : AudioBufferSourceNode {
+		var srcnode = ctx.createBufferSource();
+		srcnode.buffer = b;
+		srcnode.connect( ctx.destination );
+		return srcnode;
+	}
+	
+	function addFragmentSound(start : Float, dur : Float, snd : WASound, last : Bool):Void //dur in seconds
+	{
+		Logging.MLog("ATrack.addFragmentSound start="+start + " dur="+dur);
 		var frag = new Fragment(start, dur, snd);	
 		var i:Int = 0;
 		var len = sections.length;
@@ -51,33 +79,39 @@ class AudioTrack
 			return;
 		}
 		
+		//if (dur > 60) 
+		//	js.Lib.debug();
+		
 		while (i < len && start - sections[i].start_time > 0.001)
 			i++;
 		
 		var tmplist = sections.slice(0, i);
 		tmplist.push(frag);
-		tmplist = tmplist.concat(sections.slice(i)); //tmplist.length == len+1 ,  tmplist.length > 1
+		if (last) {
+			sections = tmplist;
+		} else {		
+			tmplist = tmplist.concat(sections.slice(i)); //tmplist.length == len+1 ,  tmplist.length > 1
 		
-		var newlist = new Array<Fragment>();
-		var time_covered:Float = 0;
-		if (tmplist[1].start_time - tmplist[0].start_time > 0.001 || tmplist[0].end_time() - tmplist[1].end_time() > 0.001) {
-			newlist.push(tmplist[0]);
-			time_covered = tmplist[0].end_time();
-		}				
-		for (j in 1...len)
-			if (tmplist[j + 1].start_time - time_covered < 0.001 &&    //if neighbors touch each other
-				tmplist[j + 1].end_time() > tmplist[j].end_time()) {   //and the second ends later than this
-					//skip
-				} else {
-					newlist.push(tmplist[j]);
-					time_covered = tmplist[j].end_time();
-				}
+			var newlist = new Array<Fragment>();
+			var time_covered:Float = 0;
+			if (tmplist[1].start_time > tmplist[0].start_time + 0.001 || tmplist[0].end_time() > tmplist[1].end_time() + 0.001) {
+				newlist.push(tmplist[0]);
+				time_covered = tmplist[0].end_time();
+			}				
+			for (j in 1...len)
+				if (tmplist[j + 1].start_time < time_covered + 0.001 &&    //if neighbors touch each other
+					tmplist[j + 1].end_time() > tmplist[j].end_time()) {   //and the second ends later than this
+						//skip
+					} else {
+						newlist.push(tmplist[j]);
+						time_covered = tmplist[j].end_time();
+					}
 				
-		if (tmplist[len].end_time() - time_covered > 0.001)
-			newlist.push(tmplist[len]);
+			if (tmplist[len].end_time() - time_covered > 0.001)
+				newlist.push(tmplist[len]);
 
-		sections = newlist;
-		
+			sections = newlist;
+		}
 		time_loaded = 0;
 		for (sec in sections)
 			if (sec.start_time - time_loaded < 0.001)
@@ -85,16 +119,24 @@ class AudioTrack
 	}
 	
 	public function Play(time : Float):Bool //false if no sound yet
-	{
+	{		
 		var idx = find_section(time);
-		if (idx < 0) return false;		
+		if (idx < 0) { 
+			//Logging.MLog("Play: section not found for time=" + time);
+			return false;		
+		}
+		Logging.MLog("ATrack.Play time=" + time);
 		var sec = sections[idx];
 		var off = time - sec.start_time;
 		if (next_sec_timer != null) {
 			next_sec_timer.stop(); 
 			next_sec_timer = null;
 		}
-		sound_channel = sec.sound.play(off * 1000);		
+		Logging.MLog("sec[" + idx + "]: start=" + sec.start_time + " dur=" + sec.duration);
+		sec.sound.play(off);
+		if (playing_sound != null)
+			playing_sound.stop();
+		playing_sound = sec.sound;
 		
 		if (idx < sections.length - 1) {
 			var next_time = sections[idx + 1].start_time;
@@ -113,8 +155,10 @@ class AudioTrack
 			next_sec_timer.stop(); 
 			next_sec_timer = null;
 		}			
-		if (sound_channel != null)
-			sound_channel.stop();
+		if (playing_sound != null) {
+			playing_sound.stop();
+			playing_sound = null;
+		}
 	}
 	
 	public function Clear():Void
@@ -126,6 +170,7 @@ class AudioTrack
 	
 	public function StopAndClean():Void
 	{
+		Logging.MLog("ATrack.StopAndClean");
 		Stop(); Clear();
 	}
 	

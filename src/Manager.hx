@@ -470,6 +470,7 @@ class Manager
 			if (prev_frame == buffers[i]) {
 				prev_frame_buf_idx = i; break;
 			}
+		//loader.ShowBufLens();
 		var free_buf_idx = get_free_buffer(prev_frame_buf_idx);
 		if (free_buf_idx < 0) {
 			loader.ParseSound();
@@ -503,7 +504,7 @@ class Manager
 					var decoder_state = decoder.DecompressI(frm.data, new_frame);					
 					handle_decode_status(decoder_state);					
 				} else {
-					//Logging.MLog("worker: decompressing P frame " + next_frame_to_decode + " len=" + frm.data.length);
+					Logging.MLog("worker: decompressing P frame " + next_frame_to_decode + " len=" + frm.data.length);
 					var res = decoder.DecompressP(frm.data, new_frame);
 					new_frame = res.data_pnt;			
 					frm.significant_changes = res.significant_changes;

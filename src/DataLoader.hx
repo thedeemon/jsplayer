@@ -62,11 +62,16 @@ class DataLoader
 	
 	public function StopAndClean():Void
 	{
+		Logging.MLog("DL.StopAndClean");
 		frames = null; reader = null; video_info_cb = null; buffer = null; sound_buffer = null;
 		avi_parser = null; mp3_parser = null; indexes = null; stop_loading = true;
 		audio_track.StopAndClean();
 		audio_track = null;
 		last_logged_sz = 0;
+	}
+	
+	public function ShowBufLens() {
+		Logging.MLog("DL: buf=" + buffer.Num() + " sound_buf=" + sound_buffer.Num());
 	}
 	
 	public function Open(url: String, video_info_callback : VideoInfo -> Void):Void
@@ -131,7 +136,7 @@ class DataLoader
 		var len = frames.length;
 		if (len == 0) return 0;
 		if (n >= len) n = len - 1;
-		while (Std.int(n) < len-1 && (frames[n]==null || !frames[n].key))
+		while (n < len-1 && (frames[n]==null || !frames[n].key))
 			n++;
 		return n;				
 	}
