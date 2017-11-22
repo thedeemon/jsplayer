@@ -1230,7 +1230,6 @@ class Main
 	
 	function seek_start(time:Float):Void
 	{
-		//js.Lib.debug();
 		skipping_stills = false;
 		tseek0 = Browser.window.performance.now();
 		man.audio_track.Stop();
@@ -1241,10 +1240,9 @@ class Main
 	{
 		if (tseek0 > 0) {
 			var t = Browser.window.performance.now();
-			Logging.MLog("seek done in t=" + (t - tseek0));
+			trace("seek done in t=" + (t - tseek0));
 			tseek0 = -1;
 		}
-		//DataLoader.ELog("seek_done");
 		seeking = false;
 		start_time = haxe.Timer.stamp();
 		start_pos = man.shown_time;		
