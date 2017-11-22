@@ -38,17 +38,23 @@ class AudioTrack
 	var playing_sound : WASound;
 	public var time_loaded(default, null) : Float;
 	static var ctx : AudioContext;
+	public static var works : Bool;
 
 	public function new() 
 	{
 		sections = new Array<Fragment>();
-		ctx = new AudioContext();
+		works = false;
+		try {
+			ctx = new AudioContext();
+			works = true;
+		} catch (e:Dynamic) { trace("WebAudio API not accessible"); }
 		time_loaded = 0;
 	}
 	
 	public function AddFragment(start : Float, data : Uint8Array, last : Bool):Void
 	{
 		Logging.MLog("ATrack.AddFragment start=" + start);
+		if (!works) return;
 		ctx.decodeAudioData(data.buffer, function(s:AudioBuffer) {
 				Logging.MLog("decoded dur=" + s.duration);
 				var wasound = new WASound(s);
@@ -119,7 +125,8 @@ class AudioTrack
 	}
 	
 	public function Play(time : Float):Bool //false if no sound yet
-	{		
+	{	
+		if (!works) return false;
 		var idx = find_section(time);
 		if (idx < 0) { 
 			//Logging.MLog("Play: section not found for time=" + time);

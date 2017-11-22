@@ -207,6 +207,7 @@ class DataLoaderAVIIndexed extends DataLoader
 	
 	function add_sound_chunk(chunk : ByteArray):Void
 	{
+		return; // to be fixed...
 		//Logging.MLog("add_sound_chunk len=" + chunk.length);
 		if (reading_start_position.Eq(zero64)) {
 			sound_buffer.AddChunk(chunk);

@@ -473,7 +473,7 @@ class Manager
 		//loader.ShowBufLens();
 		var free_buf_idx = get_free_buffer(prev_frame_buf_idx);
 		if (free_buf_idx < 0) {
-			loader.ParseSound();
+			if (AudioTrack.works) loader.ParseSound();
 			//DataLoader.ELog("no free bufs, exit", t_entry);
 			return; //no free bufs to decode to
 		}

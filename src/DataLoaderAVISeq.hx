@@ -50,7 +50,8 @@ class DataLoaderAVISeq extends DataLoader
 	
 	function add_sound_chunk(chunk : ByteArray):Void
 	{
-		sound_buffer.AddChunk(chunk);
+		if (AudioTrack.works)
+			sound_buffer.AddChunk(chunk);
 	}		
 	
 	override public function LoadedFramesEnd():Int
