@@ -42,7 +42,6 @@ class DataLoaderAVISeq extends DataLoader
 			frames[avi_parsing_pos].data = new Uint8Array( arr.toArrayBuffer() );
 		} else {
 			var u8a = new Uint8Array( arr.toArrayBuffer() );
-			js.Lib.debug();
 			var keyfr = (avi_parsing_pos == 0 ? true : (decoder != null ? decoder.IsKeyFrame(u8a) : false));
 			frames[avi_parsing_pos] = { key : keyfr, data : u8a, ix: -1, significant_changes : null };
 		}

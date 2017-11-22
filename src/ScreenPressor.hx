@@ -96,7 +96,8 @@ class ScreenPressor implements IVideoCodec
 	public function IsKeyFrame(data : Uint8Array):Bool
 	{
 		if (data == null || data.length == 0) return false;
-		return (data[0] == 0x12 || data[0] == 0x11);
+		var b = data[0];		
+		return (b == 0x12 || b == 0x11 || b == 0x22 || b == 0x21);
 	}
 	
 	public function State():DecoderState
