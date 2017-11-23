@@ -605,14 +605,14 @@ class Main
 		controls.addChild(btn_nextkey);
 		
 		btn_zoomout = create_button("btn_zoomout", function(g : Graphics):Void {
-			g.lineStyle(3, color_button_face);
+			g.lineStyle(2, color_button_face);
 			g.drawRect(10, 19, 20, 2);
 		});
 		btn_zoomout.x = 500; btn_zoomout.y = button_level;
 		controls.addChild(btn_zoomout);
 		
 		btn_zoomin = create_button("btn_zoomin", function(g : Graphics):Void {
-			g.lineStyle(3, color_button_face);
+			g.lineStyle(2, color_button_face);
 			g.drawRect(10, 19, 20, 2);
 			g.drawRect(19, 10, 2, 20);
 		});
@@ -654,8 +654,11 @@ class Main
 				
 		if (fullscr) {
 			btn_fullscreen = create_button("btn_fullscreen", function(g:Graphics):Void {
-				g.lineStyle(3, color_button_face);
-				g.drawRect(8, 10, 24, 20);
+				g.lineStyle(2, color_button_face);
+				g.drawRect(8, 10, 24, 1);
+				g.drawRect(8, 10, 1, 20);
+				g.drawRect(8, 30, 25, 1);
+				g.drawRect(8+24, 10, 1, 20);
 			});
 			btn_fullscreen.x = 400; btn_fullscreen.y = button_level;
 			controls.addChild(btn_fullscreen);
@@ -1215,7 +1218,9 @@ class Main
 	{
 		if (tseek0 > 0) {
 			var t = Browser.window.performance.now();
-			trace("seek done in t=" + (t - tseek0));
+			var msg = "seek done in t=" + (t - tseek0);
+			trace(msg);
+			//untyped playerLog(msg);
 			tseek0 = -1;
 		}
 		seeking = false;

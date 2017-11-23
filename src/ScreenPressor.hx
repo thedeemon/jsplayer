@@ -65,7 +65,7 @@ class ScreenPressor implements IVideoCodec
 	}
 	
 	function initEntro(version:Int):Bool { // => ok?
-		Logging.MLog("ScreenPressor stream version=" + version);
+		trace("ScreenPressor stream version=" + version);
 		switch(version) {
 			case 2: ec = new EntroCoderRC();
 			case 3: ec = new EntroCoderANS();
