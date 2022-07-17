@@ -214,7 +214,7 @@ class SmallContext {
 	public var symbols : Uint8Array;   //symbols met, sorted
 	public var freqs : Uint16Array;
 	static inline var f0 = 50;// STEP_CX5;
-	static var totFr;
+	static var totFr : Int;
 	
 	public function new(size : Int) {
 		S = size; 

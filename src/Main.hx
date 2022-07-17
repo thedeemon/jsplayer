@@ -1331,6 +1331,8 @@ class Main
 		untyped s.style.width  = x+"px";
 		untyped s.style.height = y+"px";
 		Lib.current.stage.window.resize(x, y);
-		Lib.current.stage.onWindowResize(Lib.current.stage.window, x, y);
+		
+		// How to fix it? Same problem in internet: https://community.openfl.org/t/openfl-display-stage-has-no-field-onwindowresize/11670
+		//Lib.current.stage.onWindowResize(Lib.current.stage.window, x, y);
 	}
 }
