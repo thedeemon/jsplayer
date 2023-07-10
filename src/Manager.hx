@@ -6,6 +6,7 @@ import ScreenPressor;
 import js.Lib;
 import js.html.Uint32Array;
 import js.html.Uint8Array;
+import lime._internal.graphics.ImageCanvasUtil;
 import openfl.display.BitmapData;
 import openfl.events.TimerEvent;
 import openfl.geom.Rectangle;
@@ -54,7 +55,7 @@ class Manager
 	var on_idecoded : Void -> Void;
 	var convert_fromRGB15 : Bool;
 	public var shown_time : Float; //time of frame last shown
-	public var audio_track(get_audio_track, null) : AudioTrack;
+	public var audio_track(get, null) : AudioTrack;
 	var loading_pause : Bool;
 	var worker_timer : Timer;	
 	static inline var INSIGNIFICANT_LINES : Int = 36;
@@ -377,7 +378,7 @@ class Manager
 				}
 			}
 			//set image type to DATA so render() sees it and calls putImageData
-			lime.graphics.utils.ImageCanvasUtil.convertToData(bitmap_data.image); 
+			ImageCanvasUtil.convertToData(bitmap_data.image); 
 			bitmap_data.image.dirty = true;
 			bitmap_data.image.version++;
 			//js.Lib.debug();
