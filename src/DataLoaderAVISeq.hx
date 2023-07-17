@@ -1,7 +1,7 @@
 package ;
 import DataLoader;
 import js.Lib;
-import js.html.Uint8Array;
+import js.lib.Uint8Array;
 import openfl.utils.ByteArray;
 import haxe.Timer;
 import AVIParser;

@@ -5,7 +5,7 @@ import js.html.audio.AudioBufferSourceNode;
 import openfl.utils.Timer;
 import openfl.events.TimerEvent;
 import js.html.audio.AudioContext;
-import js.html.Uint8Array;
+import js.lib.Uint8Array;
 import WASound;
 import Logging;
 

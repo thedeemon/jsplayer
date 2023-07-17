@@ -2,7 +2,7 @@ package ;
 
 import js.Lib;
 import openfl.utils.ByteArray;
-import js.html.Uint8Array;
+import js.lib.Uint8Array;
 
 class InputBuffer 
 {

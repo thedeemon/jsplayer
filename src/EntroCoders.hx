@@ -2,8 +2,8 @@ package ;
 import RangeCoder;
 import ANS;
 import js.Lib;
-import js.html.Uint8Array;
-import js.html.Uint32Array;
+import js.lib.Uint8Array;
+import js.lib.Uint32Array;
 
 interface EntroCoder {
 	function preinit():Void;

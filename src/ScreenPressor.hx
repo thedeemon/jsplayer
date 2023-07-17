@@ -1,8 +1,8 @@
 package ;
 import js.Browser;
-import js.html.Int32Array;
-import js.html.Uint8Array;
-import js.html.Uint32Array;
+import js.lib.Int32Array;
+import js.lib.Uint8Array;
+import js.lib.Uint32Array;
 import js.Lib as JsLib;
 import js.html.Performance;
 import EntroCoders;

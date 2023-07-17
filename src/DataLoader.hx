@@ -13,7 +13,7 @@ import VideoData;
 import Int64;
 import openfl.external.ExternalInterface;
 import List;
-import js.html.Uint8Array;
+import js.lib.Uint8Array;
 
 enum FrameInfo { frame_ready(frm : CompressedFrame); frame_notready; frame_loading;  }
 

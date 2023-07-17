@@ -34,6 +34,7 @@ import openfl.external.ExternalInterface;
 import VideoData;
 import js.Lib as JsLib;
 import js.html.Screen;
+import js.Syntax;
 
 enum ScrollingState { scrollNone; scrollHor; scrollVer; }
 
@@ -224,7 +225,7 @@ class Main
 	{
 		if ( Lib.current.stage != null )    {
 			Lib.current.stage.scaleMode = StageScaleMode.NO_SCALE;
-            if ( Std.is( Lib.current.stage.stageWidth , Int ) )  
+            if ( Std.isOfType( Lib.current.stage.stageWidth , Int ) )
 			{                
 				trace("Lib.current.loaderInfo.parameters=" + Lib.current.loaderInfo.parameters);
 				var url = Lib.current.stage.loaderInfo.url;

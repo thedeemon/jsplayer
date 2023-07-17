@@ -1,6 +1,6 @@
 package ;
 import js.Lib;
-import js.html.Uint8Array;
+import js.lib.Uint8Array;
 import openfl.display.Loader;
 import openfl.events.TimerEvent;
 import openfl.utils.ByteArray;

@@ -1,7 +1,7 @@
 package ;
 import Int64;
 import openfl.utils.ByteArray;
-import js.html.Uint8Array;
+import js.lib.Uint8Array;
 
 class SuperIndexEntry {
 	public var off : Int64;

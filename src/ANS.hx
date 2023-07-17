@@ -1,6 +1,6 @@
 package ;
-import js.html.Uint16Array;
-import js.html.Uint8Array;
+import js.lib.Uint16Array;
+import js.lib.Uint8Array;
 
 class Rans {
 	var r : Int;
