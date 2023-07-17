@@ -7,7 +7,7 @@ class SuperIndexEntry {
 	public var off : Int64;
 	public var size : UInt;
 	public var duration : UInt;
-	
+
 	public function new(data : ByteArray)
 	{
 		off = Int64.Read(data);
@@ -15,7 +15,7 @@ class SuperIndexEntry {
 		duration = data.readUnsignedInt();
 		//trace("super index entry: off=" + off_low + " sz=" + size + " dur=" + duration);
 	}
-	
+
 	public function toString():String
 	{
 		return "{SupIndEnt off=" + off + " sz=" + size + " dur=" + duration + "}";
@@ -26,7 +26,7 @@ class StdIndexEntry {
 	public var off : UInt;
 	public var size : UInt;
 	public var key : Bool;
-	
+
 	public function new(?data : ByteArray)
 	{
 		if (data != null) {
@@ -34,8 +34,8 @@ class StdIndexEntry {
 			size = data.readUnsignedInt();
 			key = (size & 0x80000000) == 0;
 			size = size & 0x7FFFFFFF;
-		}		
-	}	
+		}
+	}
 }
 
 class Index
@@ -46,9 +46,9 @@ class Index
 	public var idx_offset : Int64;  //where index is
 	public var frames : Array<StdIndexEntry>;
 	public var size_in_bytes : UInt; //of index
-	
+
 	public function new()	{}
-	
+
 	public static function FromSuper(entry : SuperIndexEntry, start_frame : Int):Index
 	{
 		var x = new Index();
@@ -72,10 +72,10 @@ typedef CompressedFrame = {
 	var significant_changes : Null<Bool>;
 }
 
-enum CodecType { 
-	codec_screenpressor; 
-#if msvc	
-	codec_msvc16; codec_msvc8; 
+enum CodecType {
+	codec_screenpressor;
+#if msvc
+	codec_msvc16; codec_msvc8;
 #end
 }
 

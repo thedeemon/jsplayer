@@ -6,19 +6,19 @@ class Rans {
 	var r : Int;
 	var pos : Int;
 	var data : Uint8Array;
-	
+
 	public static inline var B = 131072;
 	public static inline var PROB_SCALE = 4096;
 
-	
+
 	public function new(srcdata:Uint8Array, pos0 : Int = 0):Void {
 		reinitImpl(srcdata, pos0);
 	}
-	
+
 	public function reinit():Void {
 		reinitImpl(data, pos);
-	}	
-	
+	}
+
 	function reinitImpl(srcdata:Uint8Array, i:Int):Void {
 		//trace("Rans.start at "+i);
 		data = srcdata;
@@ -29,20 +29,20 @@ class Rans {
 		r = x;
 		pos = i+4;
 	}
-	
+
 	static inline var RANS_BYTE_L = 1 << 23;
 
 	public inline function decGet():Int { return r & 4095; }
-	
+
 	public function decAdvance(start:Int, freq:Int):Void {
 		var x = r;
 		x = freq * (x >> 12) + (x & 4095) - start;
 		while (x < RANS_BYTE_L) {
-			x = (x << 8) | data[pos++]; 
+			x = (x << 8) | data[pos++];
 		}
 		r = x;
 	}
-	
+
 	public inline function raw() : Int {
 		return data[pos++];
 	}
@@ -52,9 +52,9 @@ class Rans {
 typedef Freq = { freq : Int, cumFreq : Int } //to pass byte without compressing: freq=0, cumFreq=c
 
 class FixedSizeRansCtx {
-	static inline var STEP_FX = 16;	
-	static inline var step = STEP_FX; 
-	static inline var Dshift = 7; 
+	static inline var STEP_FX = 16;
+	static inline var step = STEP_FX;
+	static inline var Dshift = 7;
 	static inline var D = 1 << Dshift;
 
 	var freqs : Uint16Array;
@@ -64,7 +64,7 @@ class FixedSizeRansCtx {
 	//BYTE decTable[PROB_SCALE / D]; //32 bytes for current values of PROB_SCALE=4k and Dshift=7
 	var decTable : Uint8Array;
 	var NSym : Int;
-	
+
 	public function new(NSymb:Int) {
 		NSym = NSymb;
 		freqs = new Uint16Array(NSymb * 2);
@@ -75,13 +75,13 @@ class FixedSizeRansCtx {
 	public inline function setFreq(i:Int, fr:Int, cf:Int) {
 		freqs[i * 2] = fr; freqs[i * 2 + 1] = cf;
 	}
-		
+
 	inline function readFreq(i:Int) { return freqs[i * 2]; }
 	inline function readCumFreq(i:Int) { return freqs[i * 2 + 1]; }
-	
+
 	public inline function getCumFreq(i:Int) { return freqs[i * 2 + 1]; }
-	
-	
+
+
 	function incrCnt(c:Int):Void {
 		//assert(c >= 0);
 		//assert(c < NSym);
@@ -155,21 +155,21 @@ typedef DecReceiver = {
 class SymbList {
 	public var symb : Uint8Array;
 	public var d : Int;
-	
+
 	public function new(num:Int) {
 		symb = new Uint8Array(num);
 	}
-	
+
 	public function findOrAdd(c:Int):FindRes {
 		//Main.print("findOrAdd "+c+" d="+d);
 		for(i in 0...d)
 			if (symb[i]==c) return Found;
 		if (d < symb.length) {
-			symb[d] = c; d++; return Added;			
+			symb[d] = c; d++; return Added;
 		}
-		return NoRoom;		
+		return NoRoom;
 	}
-	
+
 	public function show() {
 		//super.show();
 		//Main.print("SymbList: d=" + d + " " + symb);
@@ -178,9 +178,9 @@ class SymbList {
 
 class Cx1 extends SymbList {
 	public function new(c:Int) {
-		super(14); 
-		//kind = 1; 
-		d = 1; 
+		super(14);
+		//kind = 1;
+		d = 1;
 		symb[0] = c;
 	}
 }
@@ -215,29 +215,29 @@ class SmallContext {
 	public var freqs : Uint16Array;
 	static inline var f0 = 50;// STEP_CX5;
 	static var totFr : Int;
-	
+
 	public function new(size : Int) {
-		S = size; 
+		S = size;
 		symbols = new Uint8Array(S);
 		freqs = new Uint16Array(S);
 		maxpos = 0;
-	}	
-	
+	}
+
 	function create(c1 : Cx1, c : Int):Void {
 		d = c1.d;
 		var ss = c1.symb.subarray(0, d);
 		//untyped ss.sort();
 		Sorter.insort(ss);
 		for (i in 0...d) {
-			symbols[i] = ss[i];			
+			symbols[i] = ss[i];
 			if (symbols[i]==c) {
 				freqs[i] = 2* SmallContext.f0; maxpos = i;
 			} else
 				freqs[i] = SmallContext.f0;
 		}
 	}
-	
-	function addSymb(pos:Int, c:Int/*, uint16_t &totFr*/):Bool { 
+
+	function addSymb(pos:Int, c:Int/*, uint16_t &totFr*/):Bool {
 		if (d == S) return false;
 		var i = d - 1;
 		while(i >= pos) {
@@ -250,16 +250,16 @@ class SmallContext {
 		if (totFr + f0 > Rans.PROB_SCALE) rescale(/*totFr*/);
 		return true;
 	}
-	
+
 	function rescale() { //sets SmallContext.totFr
 		var s = 256 - d;
 		for(i in 0...d) {
 			freqs[i] -= freqs[i] >> 1;
 			s += freqs[i];
 		}
-		totFr = s;		
+		totFr = s;
 	}
-	
+
 	function decodeSC(someFreq:Int, rcv : DecReceiver, totFr0:Int):Bool {
 		totFr = totFr0;
 		var shift = 0, tot = totFr0;
@@ -276,14 +276,14 @@ class SmallContext {
 			var startFr = cumFr + s - lastSymb;
 			if (someFreq < startFr) { //c < s
 				rcv.c = someFreq - cumFr + lastSymb;
-				cumFr = someFreq;	
+				cumFr = someFreq;
 				rcv.cumFreq = cumFr << shift;	rcv.freq = 1 << shift;
 				freqs[maxpos] = maxFreq;
 				return addSymb(pos, rcv.c/*, totFr*/);
 			}
 			var fr = freqs[pos];
 			if (startFr + fr > someFreq) { //s=c
-				rcv.c = s; 
+				rcv.c = s;
 				cumFr += rcv.c - lastSymb;
 				rcv.cumFreq = cumFr << shift;	rcv.freq = fr << shift;
 				freqs[maxpos] = maxFreq;
@@ -315,44 +315,44 @@ class Cx4 extends SmallContext {
 		//kind = 4;
 		create(c1, c);
 	}
-	
-	public function decode(someFreq:Int, rcv : DecReceiver):Bool { 
+
+	public function decode(someFreq:Int, rcv : DecReceiver):Bool {
 		var totFr = freqs[0] + freqs[1] + freqs[2] + freqs[3] + 256 - d;
 		return decodeSC(someFreq, rcv, totFr);
 	}
-	
-	public function upgrade(c:Int) : CxU { 
-		return Kind5( Cx5.fromCx4(this, c) );	
+
+	public function upgrade(c:Int) : CxU {
+		return Kind5( Cx5.fromCx4(this, c) );
 	}
 }
 
 class Cx5 extends SmallContext {
 	var cntsum : Int;
-	
+
 	public function new() {
 		super(16);
 		//kind = 5;
 	}
-	
+
 	public static function fromCx1(c1 : Cx1, c : Int):Cx5 {
 		var cx = new Cx5();
 		cx.create(c1, c);
 		cx.calcSum();
 		return cx;
 	}
-	
+
 	public static function fromCx4(c4 : Cx4, c : Int):Cx5 {
 		var cx = new Cx5();
 		cx.createFrom4(c4, c);
 		return cx;
 	}
-	
+
 	function createFrom4(c4 : Cx4, c : Int) {
 		var i = 0, dd = c4.d, j=0, totFr=0;
 		while(i < dd && c4.symbols[i] < c) {
 			symbols[i] = c4.symbols[i];
 			totFr += freqs[i] = c4.freqs[i];
-			i++; 
+			i++;
 		}
 		var j = i;
 		symbols[j] = c;
@@ -368,21 +368,21 @@ class Cx5 extends SmallContext {
 			rescale(/*cntsum*/);
 			//cntsum = SmallContext.totFr;
 		}
-		calcSum();		
+		calcSum();
 	}
-	
+
 	function calcSum() {
 		var totFr = 256 - d;
 		for(i in 0...d) totFr += freqs[i];
-		cntsum = totFr;		
+		cntsum = totFr;
 	}
-	
-	public function decode(someFreq:Int, rcv : DecReceiver):Bool { 
+
+	public function decode(someFreq:Int, rcv : DecReceiver):Bool {
 		var res = decodeSC(someFreq, rcv, cntsum);
 		cntsum = SmallContext.totFr;
 		return res;
 	}
-	
+
 	public function upgrade(c:Int):CxU
 	{
 		var cx = new Cx6();
@@ -391,37 +391,37 @@ class Cx5 extends SmallContext {
 	}
 }
 
-class Cx6  {	
+class Cx6  {
 	public var symbols : Uint8Array;
 	public var freqs : Uint16Array;
 	public var cnts : Uint16Array;
 	var d : Int;
 	public var fshift : Int;
-	
+
 	static var _cnts : Uint16Array = new Uint16Array(256);
 	static var _freqs : Uint16Array = new Uint16Array(512);
-	
-	/*public function new(N:Int) { 
+
+	/*public function new(N:Int) {
 		freqs = new Uint16Array(N * 2);
 		cnts = new Uint16Array(N);
 	}*/
 	static inline var Step = 25;
 	static inline var f0 = 64;
-	
+
 	public function new() { /*kind = 6;*/ }
-	
+
 	inline function setFreq(i:Int, fr:Int, cf:Int) {
 		freqs[i * 2] = fr; freqs[i * 2 + 1] = cf;
 	}
-	
+
 	/*inline function getFreq(i:Int, f:Freq) {
 		f.freq = freqs[i * 2];
 		f.cumFreq = freqs[i * 2 + 1];
 	}*/
-	
+
 	inline function readFreq(idx:Int) { return freqs[idx * 2]; }
 	inline function readCumFreq(idx:Int) { return freqs[idx * 2 + 1]; }
-	
+
 	function init(S: Int) {
 		symbols = new Uint8Array(S);
 		freqs = new Uint16Array(S*2); // (fr, cumFr) pairs
@@ -441,7 +441,7 @@ class Cx6  {
 			tot <<= 1; shift++;
 		}
 		var cumFr = 0, cfr = 0, lastSymb = 0;
-		
+
 		for(pos in 0...oldd) {
 			var s = c5.symbols[pos];
 			var startFr = cumFr + s - lastSymb;
@@ -454,8 +454,8 @@ class Cx6  {
 			cumFr += cfr;
 			lastSymb = s + 1;
 		}
-		
-		fshift = shift; 
+
+		fshift = shift;
 		// find interval for c and add it too
 		//auto fr = unmetSymbolInterval(c);
 		var fr_freq = 1 << fshift;
@@ -474,21 +474,21 @@ class Cx6  {
 				fr_cumFreq = lcumFreq + lfreq + ((c - lowerSym - 1) << fshift);
 			} else  // c > 0 but lower than all others
 				fr_cumFreq = c << fshift;
-		}		
+		}
 		setFreq(oldd, fr_freq, fr_cumFreq);
 		cnts[oldd] = fr_freq - (fr_freq >> 1);
 		symbols[oldd] = c;
 		d = oldd + 1;
-		
+
 		//incrCnt(p);
 		var step = Step << fshift;
 		cnts[oldd] += step;
 		cnts[S] += step;
 		if (cnts[S] + step > Rans.PROB_SCALE) rescaleDec();
-		
+
 		calcSum();
 		//sort by freqs...
-		for(i in 0 ... d-1) 
+		for(i in 0 ... d-1)
 			for (j in i + 1 ... d) {
 				var fj = readFreq(j), fi = readFreq(i);
 				if (fj > fi) {
@@ -500,10 +500,10 @@ class Cx6  {
 					var tc = cnts[i]; cnts[i] = cnts[j]; cnts[j] = tc;
 					//std::swap(symbols[i], symbols[j]);
 					var ts = symbols[i]; symbols[i] = symbols[j]; symbols[j] = ts;
-				}		
+				}
 			}
 	}
-		
+
 	public function createFrom2(cx:Cx2, c:Int) {
 		var S0 = cx.d <= 32 ? 32 : 64;
 		init(S0);
@@ -539,25 +539,25 @@ class Cx6  {
 			lastSymb = s + 1;
 		}
 		d = oldd;
-		fshift = shift; 
+		fshift = shift;
 		calcSum();
 		//sortByFreqs
 		if (newSymbPos > 0) { // put that symbol on 0th position
 			var fr0 = readFreq(0), cf0 = readCumFreq(0), frc = readFreq(newSymbPos), cfc = readCumFreq(newSymbPos);
 			setFreq(0, frc, cfc);
 			setFreq(newSymbPos, fr0, cf0);
-			var sym0 = symbols[0], cnt0 = cnts[0], cntc = cnts[newSymbPos];			
+			var sym0 = symbols[0], cnt0 = cnts[0], cntc = cnts[newSymbPos];
 			cnts[0] = cntc;
 			cnts[newSymbPos] = cnt0;
 			symbols[0] = c;
 			symbols[newSymbPos] = sym0;
 		}
 	}
-	
+
 	public function show() {
 		var S = symbols.length;
 		Logging.MLog("Cx6 " + " d=" + d + " S=" + S + " fshift=" + fshift);
-		for(i in 0...S) 
+		for(i in 0...S)
 			if (cnts[i] > 0) {
 				var c = symbols[i];
 				var p0 = c & (S-1);
@@ -565,25 +565,25 @@ class Cx6  {
 				if (dist < 0) dist += S;
 				Logging.MLog("tab["+i+"]={ c="+c+" dist="+dist+" p0="+p0+" fr="+readFreq(i)+","+readCumFreq(i)+" cnt="+cnts[i]+"} ");
 			}
-		Logging.MLog("cntsum="+cnts[S]);		
+		Logging.MLog("cntsum="+cnts[S]);
 	}
-	
+
 	function calcSum() {
 		var shft = fshift > 0 ? fshift-1 : 0;
 		var sum = (256 - d) << shft;
 		var S = symbols.length;
 		for(i in 0...S)
 			sum += cnts[i];
-		cnts[S] = sum;		
+		cnts[S] = sum;
 	}
-	
+
 	function rescaleDec() {
 		var sh = fshift > 0 ? fshift-1 : 0;
 		var c0 = 1 << sh;
-		for(i in 0...256) 
-			_cnts[i] = c0; 
-		for(i in 0...d) 
-			_cnts[ symbols[i] ] = cnts[i];		
+		for(i in 0...256)
+			_cnts[i] = c0;
+		for(i in 0...d)
+			_cnts[ symbols[i] ] = cnts[i];
 		var cumFr = 0;
 		for(i in 0...256) {
 			_freqs[i*2] = _cnts[i];
@@ -602,8 +602,8 @@ class Cx6  {
 		}
 		cnts[symbols.length] = cntsum;
 	}
-	
-	public function decode(someFreq:Int, rcv:DecReceiver):Bool 
+
+	public function decode(someFreq:Int, rcv:DecReceiver):Bool
 	{
 		var lfreq = 0, lcumFreq =  0, lowerSym = 0;
 		for(i in 0...d) {
@@ -627,7 +627,7 @@ class Cx6  {
 			var x = (someFreq - cumFr) >> fshift; //x = c - lowerSym - 1
 			c = x + lowerSym + 1;
 			fr_cumFreq = lcumFreq + lfreq + (x << fshift);
-			/*if (c > 255) { 
+			/*if (c > 255) {
 				trace("Cx6.decode(" + someFreq + ") lfreq=" + lfreq + " lcumFreq=" + lcumFreq + " fshift=" + fshift
 				 + " x=" + x + " lowerSym="+lowerSym +" fr_cumFreq="+fr_cumFreq + " c="+c);
 				js.Lib.debug();
@@ -639,16 +639,16 @@ class Cx6  {
 		}
 		//interval = fr;
 		rcv.freq = fr_freq; rcv.cumFreq = fr_cumFreq; rcv.c = c;
-		var p = addDec(c, fr_freq, fr_cumFreq); 
+		var p = addDec(c, fr_freq, fr_cumFreq);
 		if (p < 0) {
 			if (symbols.length==64) return false; // todo: get rid of two phases, always be 40
 			growDec();
-			p = addDec(c, fr_freq, fr_cumFreq); 
+			p = addDec(c, fr_freq, fr_cumFreq);
 		}
 		incrCntDec(p);
 		return true;
 	}//decode
-	
+
 	function addDec(c:Int, freq:Int, cumFreq:Int):Int { // => pos or -1 if full
 		if (d >= /*MaxD6*/40 || d >= symbols.length) return -1;
 		//assert(fr.freq > 0);
@@ -676,7 +676,7 @@ class Cx6  {
 		cnts = cs;
 		freqs = fs;
 	}
-	
+
 	function incrCntDec(pos:Int) {
 		var step = Step << fshift;
 		var S = symbols.length;
@@ -694,8 +694,8 @@ class Cx6  {
 		}
 		if (cnts[S] + step > Rans.PROB_SCALE) rescaleDec();
 	}
-	
-	public function upgrade(c:Int):CxU 
+
+	public function upgrade(c:Int):CxU
 	{
 		var cx = new Cx7();
 		cx.createFrom6(this, c);
@@ -707,7 +707,7 @@ class Cx7 extends FixedSizeRansCtx {
 	public function new() {
 		super(256); //kind = 7;
 	}
-	
+
 	public function createFrom3(c3:Cx3, c:Int) {
 		for(i in 0...256) {
 			freqs[i*2] = 1; //freq=1
@@ -735,16 +735,16 @@ class Cx7 extends FixedSizeRansCtx {
 			for(k in k0...k1)
 				decTable[k] = i;
 			cf += fr;
-		}		
+		}
 	}
-	
+
 	public function createFrom6(c6:Cx6, c:Int) {
 		var S = c6.symbols.length;
 		cntsum = c6.cnts[S];
-		
+
 		for(i in 0...S) if (c6.cnts[i] > 0) {
 			var x = c6.symbols[i];
-			setFreq(x,  c6.freqs[i*2], c6.freqs[i*2+1]);			
+			setFreq(x,  c6.freqs[i*2], c6.freqs[i*2+1]);
 			cnts[x] = c6.cnts[i];
 		}
 		var funmet = 1 << c6.fshift;
@@ -767,48 +767,48 @@ class Cx7 extends FixedSizeRansCtx {
 			for(k in k0...k1)
 				decTable[k] = i;
 			cumFr += fr;
-		}		
+		}
 	}
 }
 
 enum CxU {
-	KindNone;	
+	KindNone;
 	Kind1(c1:Cx1);
 	Kind2(c2:Cx2);
 	Kind3(c3:Cx3);
 	Kind4(c4:Cx4);
 	Kind5(c5:Cx5);
 	Kind6(c6:Cx6);
-	Kind7(c7:Cx7);	
+	Kind7(c7:Cx7);
 }
 
-class Context { 
+class Context {
 	var u : CxU;
 	public static var rcv : DecReceiver;
 
 	public function new() { u = KindNone; rcv = { c:0, freq:0, cumFreq:0 }; }
-	
+
 	public function show() { /*if (u != null) u.show(); else trace("Context.show: kind = 0");*/ }
-	
+
 	public function renew() { u = KindNone; }
-	
+
     public function decode(someFreq:Int):Bool {  // updates stats, if true sets c and interval (freq, cumFreq)
 		//each call site has different type of x
 		//monomorphic call - good for JS engine!
 		switch(u) { //ideally should be ordered in decreasing probability order
-			case Kind6(x) : if (!x.decode(someFreq, rcv)) u = x.upgrade(rcv.c); 
+			case Kind6(x) : if (!x.decode(someFreq, rcv)) u = x.upgrade(rcv.c);
 			case Kind7(x) : x.decode(someFreq, rcv); //aways true
-			case Kind4(x) : if (!x.decode(someFreq, rcv)) u = x.upgrade(rcv.c); 
-			case Kind5(x) : if (!x.decode(someFreq, rcv)) u = x.upgrade(rcv.c); 
+			case Kind4(x) : if (!x.decode(someFreq, rcv)) u = x.upgrade(rcv.c);
+			case Kind5(x) : if (!x.decode(someFreq, rcv)) u = x.upgrade(rcv.c);
 			case Kind1(_) | Kind2(_) | Kind3(_) | KindNone: return false;
-		}		
+		}
 		/*if (u == null || u.kind < 4) return false;
 		if (!u.decode(someFreq, this)) {
 			u = u.upgrade(c);
 		}*/
 		return true;
 	}
-	
+
 	public function update(c:Int):Void {
 		switch(u) {
 			case KindNone: u = Kind1( new Cx1(c) );
@@ -817,45 +817,45 @@ class Context {
 			case Kind3(x): updateC3(c, x);
 			case Kind4(_) | Kind5(_) | Kind6(_) | Kind7(_): trace("unexpected kind in Context.update");
 		}
-		
+
 		/*if (u == null) { u = new Cx1(c); }
 		else {
 			switch(u.kind) {
-				case 1: updateC1(c); 
-				case 2: updateC2(c); 
-				case 3: updateC3(c); 
+				case 1: updateC1(c);
+				case 2: updateC2(c);
+				case 3: updateC3(c);
 			}
 		}*/
 	}
-		
+
 	function updateC1(c:Int, c1:Cx1):Void {
 		switch(c1.findOrAdd(c)) {
 			case Found:
 				if (c1.d <= 4) u = Kind4( new Cx4(c1, c) );
 				else u = Kind5( Cx5.fromCx1(c1, c) );
-			case Added: 
+			case Added:
 			case NoRoom: u = Kind2( new Cx2(c1, c) );
-		}		
+		}
 	}
-	
+
 	function updateC2(c:Int, c2:Cx2):Void {
 		switch(c2.findOrAdd(c)) {
-			case Found:	
+			case Found:
 				var cx = new Cx6();
 				cx.createFrom2(c2, c);
 				u = Kind6( cx );
-			case Added: 
+			case Added:
 			case NoRoom: u = Kind3( new Cx3(c2, c) );
-		}		
+		}
 	}
-	
+
 	function updateC3(c:Int, c3:Cx3):Void {
 		switch(c3.findOrAdd(c)) {
 			case Found:	//u.c7 = upgradeTo7<Cx3>(u.c3, c, decoding); break;
 				var cx = new Cx7(); cx.createFrom3(c3, c); u = Kind7(cx);
-			case Added: 
+			case Added:
 			case NoRoom: trace("c3.findOrAdd returned NoRoom"); //must not happen
-		}		
+		}
 	}
 }//Context
 
@@ -868,5 +868,5 @@ class Sorter {
 				j--;
 			}
 		}
-	}	
+	}
 }

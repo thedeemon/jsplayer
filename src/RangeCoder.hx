@@ -2,24 +2,24 @@ package ;
 import js.lib.Uint8Array;
 import js.lib.Uint32Array;
 
-class RangeCoder 
+class RangeCoder
 {
 	var range : Int;
 	var code : Int;
 	var data : Uint8Array;
 	var pos : Int;
-		
+
 	static inline var TOP = 0x01000000;
 	static inline var BOT =   0x010000;
-		
-	public function new() 
-	{		
+
+	public function new()
+	{
 	}
 
 	public function DecodeBegin(src : Uint8Array, pos0 : Int):Void
 	{
 		code = 0;
-		//range = 4294967295;// 0xFFFFFFFF;		
+		//range = 4294967295;// 0xFFFFFFFF;
 		var ff = 0xFFFF;
 		range = ff * 65536;
 		range += ff;
@@ -32,53 +32,53 @@ class RangeCoder
 		code = (code * 256) + data[pos + 4];
 		pos += 5;
 	}
-	
+
 	inline function decode(cumFreq : Int, freq:Int, total_freq:Int) :Void
 	{
 		code -= cumFreq * range;
 		range = range * freq;
-		while ( range < TOP ) { 
-			code = (code * 256) + data[pos++];  range *= 256; 
+		while ( range < TOP ) {
+			code = (code * 256) + data[pos++];  range *= 256;
 		}
 	}
-	
- 	inline function get_freq(total_freq:Int):Int 
+
+ 	inline function get_freq(total_freq:Int):Int
 	{
 		range = Std.int(range / total_freq);
 		return Std.int(code / range);
 	}
-		
-	public inline function DecodeVal(cnt:Uint32Array, maxc:Int, step:Int):Int 
+
+	public inline function DecodeVal(cnt:Uint32Array, maxc:Int, step:Int):Int
 	{
 		var totfr = cnt[maxc];
 		var value = get_freq(totfr);
 		var c = 0;
 		var cumfr = 0;
 		var cnt_c = 0;
-		while (c < maxc) {	
+		while (c < maxc) {
 			cnt_c = cnt[c];
-			if (value >= cumfr + cnt_c)	
-				cumfr += cnt_c;	
+			if (value >= cumfr + cnt_c)
+				cumfr += cnt_c;
 			else
 				break;
 			c++;
-		}	
+		}
 		decode(cumfr, cnt_c, totfr);
-	
+
 		cnt[c] = cnt_c + step;
-		totfr += step;		
+		totfr += step;
 		if (totfr > BOT) {
 			totfr = 0;
 			for (i in 0...maxc) {
 				var nc = (cnt[i] >> 1) + 1;
 				cnt[i] = nc;///	cnt[i] = (cnt[i]>>1)+1;
 				totfr += nc;
-			}			
+			}
 		}
 		cnt[maxc] = totfr;
 		return c;
 	}
-	
+
 	public /*inline*/ function DecodeValUni(cnt:Uint32Array, off:Int, step:Int):Int
 	{
 		var totfr = cnt[off + 16];
