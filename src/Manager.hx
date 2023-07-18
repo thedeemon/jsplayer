@@ -349,7 +349,8 @@ class Manager
 					dstBytes[j + 2] = srcBytes[j + 1];
 					dstBytes[j + 3] = srcBytes[j];*/
 					var c = src[i];
-					conv_buffer[i] = ((c & 255) << 24) | ((c & 0xFF00) << 8) | ((c & 0xFF0000) >> 8);
+					//conv_buffer[i] = ((c & 255) << 24) | ((c & 0xFF00) << 8) | ((c & 0xFF0000) >> 8);
+                    conv_buffer[i] =  0xFF000000 | ((c & 0xFF) << 16) | (c & 0xFF00) | ((c >> 16) & 0xFF);
 				}
 			}
 			//js.Lib.debug();

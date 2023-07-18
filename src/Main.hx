@@ -810,17 +810,17 @@ class Main
 	function isFullScreen() : Bool
 	{
 		var doc = Browser.document;
-		if (untyped __js__('"webkitFullscreenEnabled" in doc'))
+		if (untyped js.Syntax.code('"webkitFullscreenEnabled" in doc'))
 		untyped 	return doc.webkitIsFullScreen;
-		if (untyped __js__('"fullscreenEnabled" in doc')) {
+		if (untyped js.Syntax.code('"fullscreenEnabled" in doc')) {
 			untyped var fe = doc.fullscreenElement;
 			return fe != null;
 		} else
-		if (untyped __js__('"msFullscreenElement" in doc')) {
+		if (untyped js.Syntax.code('"msFullscreenElement" in doc')) {
 			untyped var fe = doc.msFullscreenElement;
 			return fe != null;
 		} else
-		if (untyped __js__('"mozFullScreenElement" in doc')) {
+		if (untyped js.Syntax.code('"mozFullScreenElement" in doc')) {
 			untyped var fe = doc.mozFullScreenElement;
 			return fe != null;
 		}
@@ -839,19 +839,19 @@ class Main
 	{
 		var doc = Browser.document;
 		var element = doc.getElementById(instance_id);
-		if (untyped __js__('"requestFullscreen" in element')) {
+		if (untyped js.Syntax.code('"requestFullscreen" in element')) {
 			doc.addEventListener("fullscreenchange", fullScreenChanged);
 			untyped element.requestFullscreen();
 		} else
-		if (untyped __js__('"webkitRequestFullscreen" in element')) {
+		if (untyped js.Syntax.code('"webkitRequestFullscreen" in element')) {
 			doc.addEventListener("webkitfullscreenchange", fullScreenChanged);
 			untyped element.webkitRequestFullscreen();
 		} else
-		if (untyped __js__('"mozRequestFullScreen" in element')) {
+		if (untyped js.Syntax.code('"mozRequestFullScreen" in element')) {
 			doc.addEventListener("mozfullscreenchange", fullScreenChanged);
 			untyped element.mozRequestFullScreen();
 		} else
-		if (untyped __js__('"msRequestFullscreen" in element')) {
+		if (untyped js.Syntax.code('"msRequestFullscreen" in element')) {
 			doc.addEventListener("MSFullscreenChange", fullScreenChanged);
 			untyped element.msRequestFullscreen();
 		}
@@ -860,16 +860,16 @@ class Main
 	function fullScreenOff():Void
 	{
 		var doc = Browser.document;
-		if (untyped __js__('"exitFullscreen" in doc')) {
+		if (untyped js.Syntax.code('"exitFullscreen" in doc')) {
 			untyped doc.exitFullscreen();
 		} else
-		if (untyped __js__('"webkitExitFullscreen" in doc')) {
+		if (untyped js.Syntax.code('"webkitExitFullscreen" in doc')) {
 			untyped doc.webkitExitFullscreen();
 		} else
-		if (untyped __js__('"mozCancelFullScreen" in doc')) {
+		if (untyped js.Syntax.code('"mozCancelFullScreen" in doc')) {
 			untyped doc.mozCancelFullScreen();
 		} else
-		if (untyped __js__('"msExitFullscreen" in doc')) {
+		if (untyped js.Syntax.code('"msExitFullscreen" in doc')) {
 			untyped doc.msExitFullscreen();
 		}
 	}
