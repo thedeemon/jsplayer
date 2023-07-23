@@ -68,8 +68,10 @@ class ScreenPressor implements IVideoCodec
 		trace("ScreenPressor stream version=" + version);
 		switch(version) {
 			case 2: ec = new EntroCoderRC();
-			case 3: ec = new EntroCoderANS();
+			case 3: ec = new EntroCoderANS(64);
 			        SC_CXSHIFT = 2; //v3 handles 16bpp pretty much like 24bpp
+            case 4: ec = new EntroCoderANS(32);
+			        SC_CXSHIFT = 2;
 			default: trace("unknown version of ScreenPressor!"); return false;
 		}
 		decodingBools = ec.canDecodeBool();
@@ -97,7 +99,7 @@ class ScreenPressor implements IVideoCodec
 	{
 		if (data == null || data.length == 0) return false;
 		var b = data[0];
-		return (b == 0x12 || b == 0x11 || b == 0x22 || b == 0x21);
+		return (b == 0x12 || b == 0x11 || b == 0x22 || b == 0x21|| b == 0x32 || b == 0x31);
 	}
 
 	public function State():DecoderState
@@ -305,6 +307,7 @@ class ScreenPressor implements IVideoCodec
 	{
 		//Logging.MLog("SP decompressP sz=" + src.length + " bpp=" + bpp);
 		//var t0 = Browser.window.performance.now();
+        last_one_was_flat = null;
 
 		if (src.length == 0 || !decodedI)
 			return { data_pnt: prevFrame, significant_changes : false};
@@ -480,7 +483,6 @@ class ScreenPressor implements IVideoCodec
 
 		//prev_frame = buffer_address; //?
 		prevFrame = dst;
-		last_one_was_flat = null;
 		//Logging.on = false;
 		return {data_pnt : prevFrame, significant_changes : signif};
 	}

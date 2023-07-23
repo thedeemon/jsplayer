@@ -406,7 +406,7 @@ class Cx6  {
 		cnts = new Uint16Array(N);
 	}*/
 	static inline var Step = 25;
-	static inline var f0 = 64;
+	public static var f0 = 32; // 32 for v4.0;  v3.0 had f0=64
 
 	public function new() { /*kind = 6;*/ }
 

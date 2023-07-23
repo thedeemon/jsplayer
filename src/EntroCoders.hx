@@ -192,7 +192,7 @@ class EntroCoderANS implements EntroCoder {
 	var mvtab : Array<FixedSizeRansCtx>; // [2] (512)
 	var myRcv : DecReceiver;
 
-	public function new() {
+	public function new(f0val : Int) {
 		myRcv = {c:0, freq:0, cumFreq:0};
 		cntab = new Array<Context>();
 		for (i in 0 ... CC.CXMAX * 3) cntab[i] = new Context();
@@ -207,6 +207,7 @@ class EntroCoderANS implements EntroCoder {
 		for (i in 0...4) sxytab[i] = new FixedSizeRansCtx(16);
 		mvtab = new Array<FixedSizeRansCtx>();
 		for (i in 0...2) mvtab[i] = new FixedSizeRansCtx(512);
+        Cx6.f0 = f0val;
 	}
 
 	public function preinit():Void {}
