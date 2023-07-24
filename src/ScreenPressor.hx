@@ -51,7 +51,7 @@ class ScreenPressor implements IVideoCodec
 
 	static inline var addr_end_tables = 0;// addr_mvtab + (msr_x * 2 + 1  + msr_y * 2 + 1) * 4;
 
-	public function new(width:Int, height:Int, num_buffers:Int, bits_per_pixel:Int) //num_frames - number of decompressed frames to store in memory
+	public function new(width:Int, height:Int, bits_per_pixel:Int)
 	{
 		//trace("ScreenPressor.new: bpp=" + bits_per_pixel + " w=" + width + " h=" + height);
 		X = width; Y = height; bpp = bits_per_pixel;
