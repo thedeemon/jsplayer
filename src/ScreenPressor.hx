@@ -38,7 +38,6 @@ class ScreenPressor implements IVideoCodec
 	var decoder_state : DecoderState;
 	var decoder_context : DecoderContext;
 	var insignificant_blocks : Int;
-	var insign_lines : Int;
 	var decodedI : Bool;
 	var last_one_was_flat : Null<Int>;
 	var decodingBools : Bool;
@@ -87,7 +86,6 @@ class ScreenPressor implements IVideoCodec
 	public function Preinit(insignificant_lines : Int):Void //must be called after memory is allocated
 	{
 		insignificant_blocks = nbx * Std.int((insignificant_lines + 15) / 16);
-		insign_lines = insignificant_lines;
 	}
 
 	public function PreviousFrame():Int32Array
