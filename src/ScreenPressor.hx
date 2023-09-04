@@ -127,12 +127,11 @@ class ScreenPressor implements IVideoCodec
 		var t0 = Browser.window.performance.now();
 
 		if (decoder_state == zero_state) {
-			//src.position = 0;
-
 			var head = src[0];// .readByte();
 			var version = (head >> 4) + 1;
 			if ((head & 0xF) == 1) { //flat
 				var clr = 0;
+                RenewI();
 				if (bpp == 16) {
 					var clr16 = src[0] + src[1] * 256;// .readUnsignedShort();
 					var b = (clr16 & 0x1F) << 3;
@@ -140,16 +139,15 @@ class ScreenPressor implements IVideoCodec
 					var r = ((clr16 >> 10) & 0x1F) << 3;
 					clr = (r << 16) + (g << 8) + b;
 				} else	{
-					var b = src[1];// .readUnsignedByte();
-					var g = src[2];// .readUnsignedByte();
-					var r = src[3];// .readUnsignedByte();
+					var b = src[1];
+					var g = src[2];
+					var r = src[3];
 					clr = (r << 16) + (g << 8) + b;
 				}
-				if (last_one_was_flat != clr) {
+				//if (last_one_was_flat != clr) {
 					for (di in 0...end)
 						dst[di] = clr;
-				}
-				//prev_frame = buffer_address; //?
+				//}
 				prevFrame = dst;
 				last_one_was_flat = clr;
 				decodedI = true;
